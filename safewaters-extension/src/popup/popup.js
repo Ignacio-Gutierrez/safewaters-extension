@@ -3,10 +3,10 @@ const enableSafeWatersCheckbox = document.getElementById("enableSafeWaters");
 
 function updateStatus(isActive) {
   if (isActive) {
-    statusElement.innerHTML = '<img src="../../assets/sailing.svg" alt="sailing"> Extensión activa';
+    statusElement.innerHTML = '<img src="../../assets/sailing.svg" alt="sailing"> Protección en curso';
     statusElement.style.color = 'green';
   } else {
-    statusElement.innerHTML = '<img src="../../assets/anchor.svg" alt="anchor">  Extensión inactiva';
+    statusElement.innerHTML = '<img src="../../assets/anchor.svg" alt="anchor"> Protección detenida';
     statusElement.style.color = 'red';
   }
 }
