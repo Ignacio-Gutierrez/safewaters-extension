@@ -18,21 +18,18 @@
     "host_permissions": [
         "<all_urls>"
     ],
-    "background": {
-        "service_worker": "background/background.js"
-    },
     "content_scripts": [
         {
             "matches": [
                 "<all_urls>"
             ],
             "js": [
-                "content/content-script.js"
+                "assets/content.js"
             ]
         }
     ],
     "action": {
-        "default_popup": "popup/popup.html",
+        "default_popup": "src/popup/popup.html",
         "default_icon": {
             "16": "icons/icon16.png",
             "32": "icons/icon32.png",
