@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./config.js";
+import { API_BASE_URL } from "../config.js";
 
 export async function testUrl(url) {
     const response = await fetch(`${API_BASE_URL}/test`, {
