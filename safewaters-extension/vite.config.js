@@ -15,5 +15,5 @@ export default defineConfig({
       }
     }
   },
-  publicDir: 'public' // Recursos estáticos como íconos o imágenes
+  publicDir: 'public'
 })
