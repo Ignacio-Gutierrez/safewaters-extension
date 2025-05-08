@@ -1,17 +1,9 @@
+import { getExtAPI } from "../utils/apis/ext-api.js";
+
 const statusElement = document.getElementById('status');
 const enableSafeWatersCheckbox = document.getElementById("enableSafeWaters");
 
-// Determinar el objeto de almacenamiento y runtime correctos (Chrome/Firefox)
-const extAPI = (() => {
-  if (typeof browser !== 'undefined' && browser.storage && browser.storage.local && browser.runtime) {
-    return { storage: browser.storage.local, runtime: browser.runtime };
-  }
-  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local && chrome.runtime) {
-    return { storage: chrome.storage.local, runtime: chrome.runtime };
-  }
-  console.error("SafeWaters Popup: Storage/Runtime API not found. Popup state will not work reliably.");
-  return null;
-})();
+const extAPI = getExtAPI();
 
 function updateStatus(isActive) {
   if (isActive) {
