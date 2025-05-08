@@ -40,7 +40,12 @@
     },
     "web_accessible_resources": [
         {
-            "resources": [ "icons/logo.svg", "icons/logo-rojo.svg" ],
+            "resources": [ 
+                "icons/logo.svg", 
+                "icons/logo-rojo.svg",
+                "assets/content-main.js",
+                "assets/ext-api.js"
+            ],
             "matches": [ "<all_urls>" ]
         }
     ]
