@@ -1,4 +1,5 @@
 import { getExtAPI } from "../apis/ext-api.js";
+import { CACHE_KEY, CACHE_EXPIRATION_MS } from "../config.js";
 
 
 const extAPI = getExtAPI();
