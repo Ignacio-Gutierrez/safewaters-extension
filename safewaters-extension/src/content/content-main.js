@@ -1,105 +1,240 @@
 import { getExtAPI } from '../utils/apis/ext-api.js';
+import { testUrl } from '../utils/apis/api-client.js';
+import { getUrlCache, setUrlCache } from '../utils/storage/url-cache.js';
+import { show as showSecurityPopup, hide as hideSecurityPopup } from '../confirm-popup/confirm-popup.js';
 
-const extAPI = getExtAPI();
-const ICON_ID_PREFIX = 'safewaters-icon-';
+// Constants for severity levels
+const SEVERITY = {
+  SAFE: 'safe',
+  MALICIOUS: 'malicious',
+  UNCERTAIN: 'uncertain'
+};
 
-function addIconToLink(linkElement) {
-    if (!linkElement || linkElement.querySelector(`img[id^="${ICON_ID_PREFIX}"]`)) {
-        return; // No procesar si no hay enlace o ya tiene un icono
+// Main controller class
+class SafeWatersController {
+  constructor() {
+    this.extAPI = getExtAPI();
+    this.isActive = true;
+    this.initialize();
+  }
+
+  /**
+   * Initialize the extension functionality
+   */
+  initialize() {
+    if (!this.extAPI || !this.extAPI.storage || !this.extAPI.runtime) {
+      console.error("SafeWaters: Extension APIs not available. Link interception will not work.");
+      return;
     }
 
-    const iconUrl = extAPI.runtime.getURL('icons/logo.svg');
-    const icon = document.createElement('img');
-    icon.src = iconUrl;
-    icon.style.width = '16px';
-    icon.style.height = '16px';
-    icon.style.marginLeft = '5px';
-    icon.style.verticalAlign = 'middle';
-    icon.id = `${ICON_ID_PREFIX}${Math.random().toString(36).substring(7)}`; // ID único para el icono
+    this.loadInitialState();
+    this.setupListeners();
+    
+    // Log initialization
+    console.log("SafeWaters: Extension initialized");
+  }
 
-    linkElement.insertAdjacentElement('beforeend', icon);
-}
-
-function removeIcons() {
-    const icons = document.querySelectorAll(`img[id^="${ICON_ID_PREFIX}"]`);
-    icons.forEach(icon => icon.remove());
-}
-
-function processLinks() {
-    const links = document.querySelectorAll('a[href^="http"], a[href^="https"]');
-    links.forEach(link => {
-        // Evitar añadir iconos a enlaces que ya son parte de la UI de la extensión o similar
-        if (link.closest('.safewaters-ignore')) return;
-        addIconToLink(link);
+  /**
+   * Load the initial activation state from storage
+   */
+  loadInitialState() {
+    this.extAPI.storage.get(['safewatersActive'], (result) => {
+      const lastError = this.extAPI.runtime.lastError;
+      if (lastError) {
+        console.error(`SafeWaters: Error loading initial state: ${lastError.message}`);
+        this.isActive = true;
+      } else {
+        this.isActive = typeof result.safewatersActive === "undefined" ? true : result.safewatersActive;
+      }
+      console.log(`SafeWaters: Initial activation state: ${this.isActive}`);
     });
-}
+  }
 
-let observer;
-let isActive = true; // Estado por defecto
-
-function observeDOM() {
-    if (observer) {
-        observer.disconnect();
-    }
-    observer = new MutationObserver((mutationsList, observer) => {
-        if (!isActive) return;
-        for (const mutation of mutationsList) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        if (node.matches('a[href^="http"], a[href^="https"]')) {
-                            addIconToLink(node);
-                        }
-                        node.querySelectorAll('a[href^="http"], a[href^="https"]').forEach(addIconToLink);
-                    }
-                });
-            }
+  /**
+   * Set up event listeners
+   */
+  setupListeners() {
+    // Listen for state changes
+    this.extAPI.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'local' && changes.safewatersActive) {
+        this.isActive = changes.safewatersActive.newValue;
+        console.log(`SafeWaters: Activation state changed to: ${this.isActive}`);
+        
+        if (!this.isActive) {
+          hideSecurityPopup();
         }
+      }
     });
 
-    observer.observe(document.body, { childList: true, subtree: true });
-}
+    // Attach click handler with proper binding
+    const boundClickHandler = this.handleLinkClick.bind(this);
+    document.body.addEventListener('click', boundClickHandler, true);
+  }
 
-function initialize() {
-    if (extAPI && extAPI.storage && extAPI.runtime) {
-        extAPI.storage.get(['safewatersActive'], (result) => {
-            const lastError = extAPI.runtime.lastError;
-            if (lastError) {
-                console.error(`SafeWaters Content: Error getting initial state: ${lastError.message}`);
-                isActive = true;
-            } else {
-                isActive = typeof result.safewatersActive === "undefined" ? true : result.safewatersActive;
-            }
-
-            if (isActive) {
-                processLinks();
-                observeDOM();
-            }
-        });
-
-        // Escuchar cambios en el estado de activación desde el popup
-        extAPI.storage.onChanged.addListener((changes, namespace) => {
-            if (namespace === 'local' && changes.safewatersActive) {
-                isActive = changes.safewatersActive.newValue;
-                if (isActive) {
-                    processLinks();
-                    observeDOM(); // Re-observar si se activa
-                } else {
-                    if (observer) {
-                        observer.disconnect();
-                    }
-                    removeIcons();
-                }
-            }
-        });
-    } else {
-        console.error("SafeWaters Content: Extension APIs not available.");
+  /**
+   * Handle link click events
+   * @param {MouseEvent} event - The click event
+   */
+  async handleLinkClick(event) {
+    console.log('SafeWaters: Link click handler activated');
+    
+    if (!this.isActive) {
+      console.log('SafeWaters: Link interception inactive');
+      return;
     }
+
+    const linkElement = event.target.closest('a[href^="http"], a[href^="https"]');
+    
+    if (!linkElement || linkElement.classList.contains('safewaters-ignore-click')) {
+      return;
+    }
+
+    // Prevent default navigation
+    event.preventDefault();
+    const url = linkElement.href;
+    console.log('SafeWaters: Link intercepted:', url);
+
+    try {
+      // Check if we have a cached result
+      const securityInfo = await this.getSecurityInfo(url);
+      
+      // Handle navigation based on security info
+      this.handleNavigation(url, securityInfo);
+    } catch (error) {
+      console.error('SafeWaters: Error analyzing URL:', error);
+      this.handleError(url, error);
+    }
+  }
+
+  /**
+   * Get security information for a URL (from cache or API)
+   * @param {string} url - The URL to check
+   * @returns {Promise<Object>} - Security information
+   */
+  async getSecurityInfo(url) {
+    // Check cache first
+    const cachedData = await getUrlCache(url);
+    
+    if (cachedData) {
+      console.log('SafeWaters: Using cached response:', cachedData);
+      return cachedData;
+    }
+
+    // Call API if not in cache
+    console.log('SafeWaters: Requesting security check from API');
+    const apiResult = await testUrl(url);
+    
+    // Process API result into consistent format
+    const securityInfo = this.processApiResult(url, apiResult);
+    
+    // Store in cache for future use
+    await setUrlCache(url, securityInfo);
+    
+    return securityInfo;
+  }
+
+  /**
+   * Process API result into a consistent security info format
+   * @param {string} url - The checked URL
+   * @param {Object} apiResult - Raw API result with the shape:
+   *                 {domain: string, malicious: boolean, info: string, source: string}
+   * @returns {Object} - Processed security information
+   */
+  processApiResult(url, apiResult) {
+    // Extract domain from URL as fallback
+    const fallbackDomain = this.extractDomain(url);
+    
+    // Determine severity level based on API response
+    let severity = SEVERITY.SAFE;
+    
+    if (apiResult.malicious) {
+      severity = SEVERITY.MALICIOUS;
+    }
+
+    return {
+      domain: apiResult.domain || fallbackDomain,
+      info: apiResult.info || "No additional information available",
+      source: apiResult.source || "Unknown",
+      malicious: apiResult.malicious || false, // Keep original boolean for compatibility
+      severity: severity
+    };
+  }
+
+  /**
+   * Handle navigation based on security info
+   * @param {string} url - The target URL
+   * @param {Object} securityInfo - Security information
+   */
+  handleNavigation(url, securityInfo) {
+    // Allow immediate navigation for safe URLs
+    if (securityInfo.severity === SEVERITY.SAFE) {
+      console.log('SafeWaters: URL deemed safe, redirecting');
+      window.location.href = url;
+      return;
+    }
+    
+    // Show warning popup for other cases
+    console.log(`SafeWaters: Showing warning popup for ${securityInfo.severity} URL`);
+    
+    // Prepare user-friendly info with source attribution if available
+    const enhancedSecurityInfo = {
+      ...securityInfo,
+      info: securityInfo.source 
+        ? `${securityInfo.info} (Source: ${securityInfo.source})`
+        : securityInfo.info
+    };
+    
+    showSecurityPopup(
+      url,
+      enhancedSecurityInfo,
+      () => { window.location.href = url; }, // Proceed callback
+      () => { /* Popup will hide itself on cancel */ }
+    );
+  }
+
+  /**
+   * Handle errors during URL verification
+   * @param {string} url - The target URL
+   * @param {Error} error - The error that occurred
+   */
+  handleError(url, error) {
+    const domain = this.extractDomain(url);
+    
+    showSecurityPopup(
+      url,
+      {
+        domain: domain,
+        info: `Could not verify the security of this link due to an error: ${error.message}. Proceed with caution.`,
+        severity: SEVERITY.UNCERTAIN
+      },
+      () => { window.location.href = url; },
+      () => { /* Popup will hide itself on cancel */ }
+    );
+  }
+
+  /**
+   * Extract domain from URL
+   * @param {string} url - The URL
+   * @returns {string} - The domain
+   */
+  extractDomain(url) {
+    try {
+      return new URL(url).hostname;
+    } catch (e) {
+      console.error('SafeWaters: Error extracting domain:', e);
+      return url; // Fallback to full URL if parsing fails
+    }
+  }
 }
 
-// Asegurarse de que el DOM esté listo antes de manipularlo
+// Initialize the controller when the DOM is ready
+function bootSafeWaters() {
+  new SafeWatersController();
+  console.log('SafeWaters: Controller initialized');
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialize);
+  document.addEventListener('DOMContentLoaded', bootSafeWaters);
 } else {
-    initialize();
+  bootSafeWaters();
 }
