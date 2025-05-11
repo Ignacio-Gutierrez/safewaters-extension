@@ -43,8 +43,11 @@
             "resources": [ 
                 "icons/logo.svg", 
                 "icons/logo-rojo.svg",
+                "icons/logo-naranja.svg",
                 "assets/content-main.js",
-                "assets/ext-api.js"
+                "assets/ext-api.js",
+                "confirm-popup/confirm-popup.html",
+                "confirm-popup/confirm-popup.css"
             ],
             "matches": [ "<all_urls>" ]
         }
