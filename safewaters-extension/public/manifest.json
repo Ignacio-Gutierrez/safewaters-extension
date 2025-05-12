@@ -28,6 +28,10 @@
             ]
         }
     ],
+    "background": {
+        "service_worker": "assets/background.js",
+        "type": "module"
+    },
     "action": {
         "default_popup": "src/popup/popup.html",
         "default_icon": {
@@ -41,11 +45,8 @@
     "web_accessible_resources": [
         {
             "resources": [ 
-                "icons/logo.svg", 
-                "icons/logo-rojo.svg",
-                "icons/logo-naranja.svg",
-                "assets/content-main.js",
-                "assets/ext-api.js",
+                "icons/*.svg",
+                "assets/*.js",
                 "confirm-popup/confirm-popup.html",
                 "confirm-popup/confirm-popup.css"
             ],
