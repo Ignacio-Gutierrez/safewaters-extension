@@ -1,6 +1,5 @@
 import { getExtAPI } from "../apis/ext-api.js";
-import { CACHE_KEY, CACHE_EXPIRATION_MS } from "../config.js";
-
+import { CACHE_KEY } from "../config.js";
 
 const extAPI = getExtAPI();
 
@@ -11,12 +10,12 @@ const extAPI = getExtAPI();
  */
 export async function setUrlCache(url, data) {
   const cache = await getCache();
-  cache[url] = { ...data, timestamp: Date.now() }; // Agrega un timestamp
+  cache[url] = { ...data };
   await saveCache(cache);
 }
 
 /**
- * Obtiene una URL de la caché, verificando si ha expirado.
+ * Obtiene una URL de la caché.
  * @param {string} url - La URL a buscar.
  * @returns {object|null} - La respuesta de la API o `null` si no existe o expiró.
  */
@@ -26,14 +25,6 @@ export async function getUrlCache(url) {
 
   if (!entry) return null;
 
-  // Verificar si la entrada ha expirado
-  if (Date.now() - entry.timestamp > CACHE_EXPIRATION_MS) {
-    console.log(`La entrada para ${url} ha expirado.`);
-    delete cache[url];
-    await saveCache(cache);
-    return null;
-  }
-
   return entry;
 }
 
@@ -42,9 +33,17 @@ export async function getUrlCache(url) {
  * @returns {object} - La caché completa.
  */
 async function getCache() {
-  return new Promise((resolve) => {
-    extAPI.storage.get([CACHE_KEY], (result) => {
-      resolve(result[CACHE_KEY] || {});
+  return new Promise((resolve, reject) => {
+    extAPI.runtime.sendMessage({ type: "GET_CACHE", key: CACHE_KEY }, (response) => {
+      if (extAPI.runtime.lastError) {
+        console.error(`SafeWaters Cache: Error enviando mensaje a background: ${extAPI.runtime.lastError.message}`);
+        return reject(new Error(extAPI.runtime.lastError.message));
+      }
+      if (response.error) {
+        console.error(`SafeWaters Cache: Error desde background al obtener caché: ${response.error}`);
+        return reject(new Error(response.error));
+      }
+      resolve(response.data || {});
     });
   });
 }
@@ -54,7 +53,22 @@ async function getCache() {
  * @param {object} cache - La caché completa.
  */
 async function saveCache(cache) {
-  return new Promise((resolve) => {
-    extAPI.storage.set({ [CACHE_KEY]: cache }, () => resolve());
+  return new Promise((resolve, reject) => {
+    extAPI.runtime.sendMessage({ type: "SAVE_CACHE", key: CACHE_KEY, cacheData: cache }, (response) => {
+      if (extAPI.runtime.lastError) {
+        console.error(`SafeWaters Cache: Error enviando mensaje a background para guardar: ${extAPI.runtime.lastError.message}`);
+        return reject(new Error(extAPI.runtime.lastError.message));
+      }
+      if (response.error) {
+        console.error(`SafeWaters Cache: Error desde background al guardar caché: ${response.error}`);
+        return reject(new Error(response.error));
+      }
+      if (response.success) {
+        resolve();
+      } else {
+        // Esto podría ocurrir si la respuesta no tiene error pero tampoco success, aunque es improbable con el background.js actual
+        reject(new Error("SafeWaters Cache: Falló el guardado de la caché en background por razón desconocida."));
+      }
+    });
   });
 }
