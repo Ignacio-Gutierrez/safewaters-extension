@@ -28,10 +28,6 @@
             ]
         }
     ],
-    "background": {
-        "service_worker": "assets/background.js",
-        "type": "module"
-    },
     "action": {
         "default_popup": "src/popup/popup.html",
         "default_icon": {

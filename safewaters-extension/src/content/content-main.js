@@ -1,25 +1,44 @@
 import { getExtAPI } from '../utils/apis/ext-api.js';
 import { testUrl } from '../utils/apis/api-client.js';
-import { getUrlCache, setUrlCache } from '../utils/storage/url-cache.js';
 import { show as showSecurityPopup, hide as hideSecurityPopup } from '../confirm-popup/confirm-popup.js';
 
-// Constants for severity levels
+/**
+ * Constantes para los niveles de severidad de la URL.
+ * @readonly
+ * @enum {string}
+ */
 const SEVERITY = {
   SAFE: 'safe',
   MALICIOUS: 'malicious',
   UNCERTAIN: 'uncertain'
 };
 
-// Main controller class
+/**
+ * Controlador principal de SafeWaters para interceptar y analizar enlaces.
+ * @class
+ */
 class SafeWatersController {
+  /**
+   * Inicializa el controlador y la extensión.
+   * @constructor
+   */
   constructor() {
+    /**
+     * API de la extensión.
+     * @type {Object}
+     */
     this.extAPI = getExtAPI();
+    /**
+     * Estado de activación de la protección.
+     * @type {boolean}
+     */
     this.isActive = true;
     this.initialize();
   }
 
   /**
-   * Initialize the extension functionality
+   * Inicializa la funcionalidad de la extensión.
+   * @returns {void}
    */
   initialize() {
     if (!this.extAPI || !this.extAPI.storage || !this.extAPI.runtime) {
@@ -29,13 +48,12 @@ class SafeWatersController {
 
     this.loadInitialState();
     this.setupListeners();
-    
-    // Log initialization
     console.log("SafeWaters: Extension initialized");
   }
 
   /**
-   * Load the initial activation state from storage
+   * Carga el estado inicial de activación desde el almacenamiento.
+   * @returns {void}
    */
   loadInitialState() {
     this.extAPI.storage.get(['safewatersActive'], (result) => {
@@ -51,54 +69,55 @@ class SafeWatersController {
   }
 
   /**
-   * Set up event listeners
+   * Configura los listeners para cambios de estado y clicks en enlaces.
+   * @returns {void}
    */
   setupListeners() {
-    // Listen for state changes
+    /**
+     * Listener para cambios en el almacenamiento.
+     */
     this.extAPI.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === 'local' && changes.safewatersActive) {
         this.isActive = changes.safewatersActive.newValue;
         console.log(`SafeWaters: Activation state changed to: ${this.isActive}`);
-        
         if (!this.isActive) {
           hideSecurityPopup();
         }
       }
     });
 
-    // Attach click handler with proper binding
+    /**
+     * Listener para clicks en enlaces.
+     */
     const boundClickHandler = this.handleLinkClick.bind(this);
     document.body.addEventListener('click', boundClickHandler, true);
   }
 
   /**
-   * Handle link click events
-   * @param {MouseEvent} event - The click event
+   * Maneja los eventos de click en enlaces.
+   * @param {MouseEvent} event - El evento de click.
+   * @returns {Promise<void>}
    */
   async handleLinkClick(event) {
     console.log('SafeWaters: Link click handler activated');
-    
     if (!this.isActive) {
       console.log('SafeWaters: Link interception inactive');
       return;
     }
 
     const linkElement = event.target.closest('a[href^="http"], a[href^="https"]');
-    
     if (!linkElement || linkElement.classList.contains('safewaters-ignore-click')) {
       return;
     }
 
-    // Prevent default navigation
+    // Previene la navegación por defecto
     event.preventDefault();
     const url = linkElement.href;
     console.log('SafeWaters: Link intercepted:', url);
 
     try {
-      // Check if we have a cached result
+      // Consulta la API directamente
       const securityInfo = await this.getSecurityInfo(url);
-      
-      // Handle navigation based on security info
       this.handleNavigation(url, securityInfo);
     } catch (error) {
       console.error('SafeWaters: Error analyzing URL:', error);
@@ -107,99 +126,78 @@ class SafeWatersController {
   }
 
   /**
-   * Get security information for a URL (from cache or API)
-   * @param {string} url - The URL to check
-   * @returns {Promise<Object>} - Security information
+   * Obtiene información de seguridad para una URL consultando la API.
+   * @param {string} url - La URL a verificar.
+   * @returns {Promise<Object>} Información de seguridad procesada.
    */
   async getSecurityInfo(url) {
-    // Check cache first
-    const cachedData = await getUrlCache(url);
-    
-    if (cachedData) {
-      console.log('SafeWaters: Using cached response:', cachedData);
-      return cachedData;
-    }
-
-    // Call API if not in cache
     console.log('SafeWaters: Requesting security check from API');
     const apiResult = await testUrl(url);
-    
-    // Process API result into consistent format
     const securityInfo = this.processApiResult(url, apiResult);
-    
-    // Store in cache for future use
-    await setUrlCache(url, securityInfo);
-    
     return securityInfo;
   }
 
   /**
-   * Process API result into a consistent security info format
-   * @param {string} url - The checked URL
-   * @param {Object} apiResult - Raw API result with the shape:
-   *                 {domain: string, malicious: boolean, info: string, source: string}
-   * @returns {Object} - Processed security information
+   * Procesa el resultado de la API en un formato consistente.
+   * @param {string} url - La URL verificada.
+   * @param {Object} apiResult - Resultado crudo de la API.
+   * @param {string} apiResult.domain - Dominio analizado.
+   * @param {boolean} apiResult.malicious - Si es malicioso.
+   * @param {string} apiResult.info - Información adicional.
+   * @param {string} apiResult.source - Fuente de la información.
+   * @returns {Object} Información de seguridad procesada.
    */
   processApiResult(url, apiResult) {
-    // Extract domain from URL as fallback
     const fallbackDomain = this.extractDomain(url);
-    
-    // Determine severity level based on API response
     let severity = SEVERITY.SAFE;
-    
     if (apiResult.malicious) {
       severity = SEVERITY.MALICIOUS;
     }
-
     return {
       domain: apiResult.domain || fallbackDomain,
       info: apiResult.info || "No additional information available",
       source: apiResult.source || "Unknown",
-      malicious: apiResult.malicious || false, // Keep original boolean for compatibility
+      malicious: apiResult.malicious || false,
       severity: severity
     };
   }
 
   /**
-   * Handle navigation based on security info
-   * @param {string} url - The target URL
-   * @param {Object} securityInfo - Security information
+   * Maneja la navegación según la información de seguridad.
+   * @param {string} url - La URL objetivo.
+   * @param {Object} securityInfo - Información de seguridad.
+   * @returns {void}
    */
   handleNavigation(url, securityInfo) {
-    // Allow immediate navigation for safe URLs
     if (securityInfo.severity === SEVERITY.SAFE) {
       console.log('SafeWaters: URL deemed safe, redirecting');
       window.location.href = url;
       return;
     }
-    
-    // Show warning popup for other cases
+    // Muestra el popup de advertencia para otros casos
     console.log(`SafeWaters: Showing warning popup for ${securityInfo.severity} URL`);
-    
-    // Prepare user-friendly info with source attribution if available
     const enhancedSecurityInfo = {
       ...securityInfo,
       info: securityInfo.source 
         ? `${securityInfo.info} (Source: ${securityInfo.source})`
         : securityInfo.info
     };
-    
     showSecurityPopup(
       url,
       enhancedSecurityInfo,
-      () => { window.location.href = url; }, // Proceed callback
-      () => { /* Popup will hide itself on cancel */ }
+      () => { window.location.href = url; }, // Callback si el usuario acepta
+      () => { /* El popup se oculta solo si cancela */ }
     );
   }
 
   /**
-   * Handle errors during URL verification
-   * @param {string} url - The target URL
-   * @param {Error} error - The error that occurred
+   * Maneja los errores durante la verificación de la URL.
+   * @param {string} url - La URL objetivo.
+   * @param {Error} error - El error ocurrido.
+   * @returns {void}
    */
   handleError(url, error) {
     const domain = this.extractDomain(url);
-    
     showSecurityPopup(
       url,
       {
@@ -208,26 +206,30 @@ class SafeWatersController {
         severity: SEVERITY.UNCERTAIN
       },
       () => { window.location.href = url; },
-      () => { /* Popup will hide itself on cancel */ }
+      () => { /* El popup se oculta solo si cancela */ }
     );
   }
 
   /**
-   * Extract domain from URL
-   * @param {string} url - The URL
-   * @returns {string} - The domain
+   * Extrae el dominio de una URL.
+   * @param {string} url - La URL.
+   * @returns {string} El dominio extraído o la URL original si falla.
    */
   extractDomain(url) {
     try {
       return new URL(url).hostname;
     } catch (e) {
       console.error('SafeWaters: Error extracting domain:', e);
-      return url; // Fallback to full URL if parsing fails
+      return url;
     }
   }
 }
 
-// Initialize the controller when the DOM is ready
+/**
+ * Inicializa el controlador SafeWaters cuando el DOM está listo.
+ * @function
+ * @returns {void}
+ */
 function bootSafeWaters() {
   new SafeWatersController();
   console.log('SafeWaters: Controller initialized');

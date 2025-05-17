@@ -1,6 +1,10 @@
 import { getExtAPI } from '../utils/apis/ext-api.js';
 
-// Constants for paths and element IDs
+/**
+ * Rutas y nombres de elementos usados por el popup de confirmación.
+ * @readonly
+ * @enum {Object}
+ */
 const PATHS = {
   POPUP_HTML: 'confirm-popup/confirm-popup.html',
   POPUP_CSS: 'confirm-popup/confirm-popup.css',
@@ -8,66 +12,66 @@ const PATHS = {
   ICON_UNCERTAIN: 'icons/logo-naranja.svg'
 };
 
+/**
+ * Identificadores de elementos del DOM usados por el popup.
+ * @readonly
+ * @enum {Object}
+ */
 const ELEMENTS = {
-  // Container IDs
   CONTAINER_MALICIOUS_ID: 'safewaters-confirmation-popup-container-malicious',
   CONTAINER_UNCERTAIN_ID: 'safewaters-confirmation-popup-container-uncertain',
-  
-  // Message element IDs
   MESSAGE_MALICIOUS_ID: 'sw-popup-message-malicious',
   MESSAGE_UNCERTAIN_ID: 'sw-popup-message-uncertain',
-  
-  // Icon element IDs
   ICON_MALICIOUS_ID: 'sw-popup-icon-malicious',
   ICON_UNCERTAIN_ID: 'sw-popup-icon-uncertain',
-  
-  // Button IDs (same in both popups)
   PROCEED_BUTTON_ID: 'sw-popup-proceed-button',
   CANCEL_BUTTON_ID: 'sw-popup-cancel-button',
-  
-  // Fallback popup ID
   FALLBACK_POPUP_ID: 'safewaters-fallback-popup',
-  
-  // Style element ID
   CSS_ID: 'safewaters-confirm-popup-styles'
 };
 
-// Popup manager class
+/**
+ * Clase encargada de gestionar la visualización de los popups de advertencia de seguridad.
+ * @class
+ */
 class SecurityPopupManager {
   constructor() {
+    /**
+     * API de la extensión.
+     * @type {Object}
+     */
     this.extAPI = getExtAPI();
+    /**
+     * Callback al continuar.
+     * @type {?Function}
+     */
     this.onProceedCallback = null;
+    /**
+     * Callback al cancelar.
+     * @type {?Function}
+     */
     this.onCancelCallback = null;
   }
 
   /**
-   * Show security alert popup based on URL analysis result
-   * @param {string} url - The URL being checked
-   * @param {Object} securityInfo - Security information with severity, domain and info
-   * @param {Function} onProceed - Callback when user chooses to proceed
-   * @param {Function} onCancel - Callback when user cancels
+   * Muestra el popup de advertencia según el resultado del análisis de la URL.
+   * @param {string} url - La URL analizada.
+   * @param {Object} securityInfo - Información de seguridad (incluye severidad, dominio e info).
+   * @param {Function} onProceed - Callback si el usuario decide continuar.
+   * @param {Function} onCancel - Callback si el usuario cancela.
+   * @returns {Promise<void>}
    */
   async show(url, securityInfo, onProceed, onCancel) {
     console.log('SafeWaters: Showing confirmation popup for URL:', url);
-    
     try {
-      // Store callbacks
       this.onProceedCallback = onProceed;
       this.onCancelCallback = onCancel;
-      
-      // Inject necessary HTML and CSS
       await this.injectPopupResources();
-      
-      // Select appropriate popup based on severity
       const popupConfig = this.getPopupConfigForSeverity(securityInfo);
-      
       if (!popupConfig) {
         throw new Error(`Unknown severity level: ${securityInfo.severity}`);
       }
-      
-      // Setup and display the popup
       this.setupAndShowPopup(url, securityInfo, popupConfig);
-      
     } catch (error) {
       console.error('SafeWaters: Error showing popup:', error);
       this.showFallbackPopup(url, securityInfo, onProceed, onCancel);
@@ -75,32 +79,28 @@ class SecurityPopupManager {
   }
 
   /**
-   * Hide all popups
+   * Oculta todos los popups y limpia callbacks.
+   * @returns {void}
    */
   hide() {
     const containers = [
       document.getElementById(ELEMENTS.CONTAINER_MALICIOUS_ID),
       document.getElementById(ELEMENTS.CONTAINER_UNCERTAIN_ID)
     ];
-    
     containers.forEach(container => {
       if (container) {
         container.style.display = 'none';
       }
     });
-    
-    // Remove fallback popup if it exists
     this.removeFallbackPopup();
-    
-    // Clear callbacks
     this.onProceedCallback = null;
     this.onCancelCallback = null;
   }
 
   /**
-   * Get popup configuration based on severity level
-   * @param {Object} securityInfo - Security information with severity level
-   * @returns {Object|null} - Popup configuration or null if invalid severity
+   * Obtiene la configuración del popup según el nivel de severidad.
+   * @param {Object} securityInfo - Información de seguridad con severidad.
+   * @returns {Object|null} Configuración del popup o null si la severidad es inválida.
    */
   getPopupConfigForSeverity(securityInfo) {
     const configs = {
@@ -109,28 +109,28 @@ class SecurityPopupManager {
         messageId: ELEMENTS.MESSAGE_MALICIOUS_ID,
         iconId: ELEMENTS.ICON_MALICIOUS_ID,
         iconPath: PATHS.ICON_MALICIOUS,
-        messageTemplate: url => `¡PELIGRO! El enlace a "${securityInfo.domain}" parece ser malicioso. Información: ${securityInfo.info}`
+        messageTemplate: url => `¡PELIGRO! El enlace a "${securityInfo.domain}" parece ser malicioso.`
       },
       'uncertain': {
         containerId: ELEMENTS.CONTAINER_UNCERTAIN_ID,
         messageId: ELEMENTS.MESSAGE_UNCERTAIN_ID,
         iconId: ELEMENTS.ICON_UNCERTAIN_ID,
         iconPath: PATHS.ICON_UNCERTAIN,
-        messageTemplate: url => `¡PRECAUCIÓN! No se pudo verificar completamente la seguridad del enlace a "${securityInfo.domain}". Información: ${securityInfo.info}. Procede con cuidado.`
+        messageTemplate: url => `¡PRECAUCIÓN! No se pudo verificar completamente la seguridad del enlace a "${securityInfo.domain}". Procede con cuidado.`
       }
     };
-    
     return configs[securityInfo.severity] || null;
   }
 
   /**
-   * Setup and display the popup with the given configuration
-   * @param {string} url - The URL being checked
-   * @param {Object} securityInfo - Security information
-   * @param {Object} popupConfig - Configuration for the popup to display
+   * Configura y muestra el popup con la configuración dada.
+   * @param {string} url - La URL analizada.
+   * @param {Object} securityInfo - Información de seguridad.
+   * @param {Object} popupConfig - Configuración del popup.
+   * @returns {void}
    */
   setupAndShowPopup(url, securityInfo, popupConfig) {
-    // Hide all popup containers first
+    // Oculta todos los popups antes de mostrar el nuevo
     Object.values({
       malicious: ELEMENTS.CONTAINER_MALICIOUS_ID,
       uncertain: ELEMENTS.CONTAINER_UNCERTAIN_ID
@@ -140,27 +140,24 @@ class SecurityPopupManager {
         container.style.display = 'none';
       }
     });
-    
-    // Get elements for the active popup
+    // Obtiene los elementos del popup activo
     const activeContainer = document.getElementById(popupConfig.containerId);
     const messageElement = document.getElementById(popupConfig.messageId);
     const iconElement = document.getElementById(popupConfig.iconId);
-    
     if (!activeContainer || !messageElement || !iconElement) {
       throw new Error(`Popup elements not found for severity: ${securityInfo.severity}`);
     }
-    
-    // Update content
+    // Actualiza el contenido
     messageElement.textContent = popupConfig.messageTemplate(url);
     iconElement.src = this.extAPI.runtime.getURL(popupConfig.iconPath);
-    
-    // Setup event listeners and show popup
+    // Configura eventos y muestra el popup
     this.setupEventListeners(activeContainer);
     activeContainer.style.display = 'flex';
   }
 
   /**
-   * Inject HTML and CSS resources for the popup
+   * Inyecta los recursos HTML y CSS necesarios para el popup.
+   * @returns {Promise<void>}
    */
   async injectPopupResources() {
     await Promise.all([
@@ -170,23 +167,20 @@ class SecurityPopupManager {
   }
 
   /**
-   * Inject popup HTML if not already present
+   * Inyecta el HTML del popup si aún no está presente.
+   * @returns {Promise<void>}
    */
   async injectPopupHTML() {
-    // Check if popup HTML is already injected
     if (document.getElementById(ELEMENTS.CONTAINER_MALICIOUS_ID) || 
         document.getElementById(ELEMENTS.CONTAINER_UNCERTAIN_ID)) {
-      return; // Already injected
+      return;
     }
-    
     try {
       const popupHTMLUrl = this.extAPI.runtime.getURL(PATHS.POPUP_HTML);
       const response = await fetch(popupHTMLUrl);
-      
       if (!response.ok) {
         throw new Error(`Failed to load popup HTML: ${response.statusText}`);
       }
-      
       const html = await response.text();
       document.body.insertAdjacentHTML('beforeend', html);
     } catch (error) {
@@ -196,14 +190,13 @@ class SecurityPopupManager {
   }
 
   /**
-   * Inject popup CSS if not already present
+   * Inyecta el CSS del popup si aún no está presente.
+   * @returns {Promise<void>}
    */
   async injectPopupCSS() {
-    // Check if popup CSS is already injected
     if (document.getElementById(ELEMENTS.CSS_ID)) {
-      return; // Already injected
+      return;
     }
-    
     try {
       const link = document.createElement('link');
       link.id = ELEMENTS.CSS_ID;
@@ -218,18 +211,16 @@ class SecurityPopupManager {
   }
 
   /**
-   * Setup event listeners for popup buttons
-   * @param {HTMLElement} containerElement - The active popup container
+   * Configura los listeners de los botones del popup.
+   * @param {HTMLElement} containerElement - Contenedor del popup activo.
+   * @returns {void}
    */
   setupEventListeners(containerElement) {
     const proceedButton = containerElement.querySelector(`#${ELEMENTS.PROCEED_BUTTON_ID}`);
     const cancelButton = containerElement.querySelector(`#${ELEMENTS.CANCEL_BUTTON_ID}`);
-    
     if (proceedButton) {
-      // Clone and replace to avoid accumulating event listeners
       const newProceedButton = proceedButton.cloneNode(true);
       proceedButton.parentNode.replaceChild(newProceedButton, proceedButton);
-      
       newProceedButton.onclick = () => {
         if (this.onProceedCallback) {
           this.onProceedCallback();
@@ -237,11 +228,9 @@ class SecurityPopupManager {
         this.hide();
       };
     }
-    
     if (cancelButton) {
       const newCancelButton = cancelButton.cloneNode(true);
       cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
-      
       newCancelButton.onclick = () => {
         if (this.onCancelCallback) {
           this.onCancelCallback();
@@ -252,19 +241,17 @@ class SecurityPopupManager {
   }
 
   /**
-   * Show fallback popup when regular popup can't be displayed
-   * @param {string} url - The URL being checked
-   * @param {Object} securityInfo - Security information
-   * @param {Function} onProceed - Callback when user chooses to proceed
-   * @param {Function} onCancel - Callback when user cancels
+   * Muestra un popup alternativo si el popup principal no puede mostrarse.
+   * @param {string} url - La URL analizada.
+   * @param {Object} securityInfo - Información de seguridad.
+   * @param {Function} onProceed - Callback si el usuario decide continuar.
+   * @param {Function} onCancel - Callback si el usuario cancela.
+   * @returns {void}
    */
   showFallbackPopup(url, securityInfo, onProceed, onCancel) {
-    this.removeFallbackPopup(); // Clean up any existing fallback popups
-    
+    this.removeFallbackPopup();
     const popup = document.createElement('div');
     popup.id = ELEMENTS.FALLBACK_POPUP_ID;
-    
-    // Apply styles
     Object.assign(popup.style, {
       position: 'fixed',
       top: '20px',
@@ -277,14 +264,10 @@ class SecurityPopupManager {
       boxShadow: '0px 0px 10px rgba(0,0,0,0.5)',
       textAlign: 'center'
     });
-    
-    // Create message
     const domain = securityInfo.domain || this.extractDomain(url);
     const message = document.createElement('p');
     message.textContent = `¡Atención! El enlace a "${domain}" podría ser peligroso. Información: ${securityInfo.info || 'No se pudo cargar la interfaz de advertencia detallada.'}`;
     message.style.color = 'black';
-    
-    // Create buttons
     const proceedButton = document.createElement('button');
     proceedButton.textContent = 'Continuar de todas formas';
     proceedButton.style.marginRight = '10px';
@@ -292,15 +275,12 @@ class SecurityPopupManager {
       if (onProceed) onProceed();
       this.removeFallbackPopup();
     };
-    
     const cancelButton = document.createElement('button');
     cancelButton.textContent = 'Cancelar';
     cancelButton.onclick = () => {
       if (onCancel) onCancel();
       this.removeFallbackPopup();
     };
-    
-    // Assemble and show popup
     popup.appendChild(message);
     popup.appendChild(proceedButton);
     popup.appendChild(cancelButton);
@@ -308,7 +288,8 @@ class SecurityPopupManager {
   }
 
   /**
-   * Remove fallback popup if it exists
+   * Elimina el popup alternativo si existe.
+   * @returns {void}
    */
   removeFallbackPopup() {
     const existingPopup = document.getElementById(ELEMENTS.FALLBACK_POPUP_ID);
@@ -318,9 +299,9 @@ class SecurityPopupManager {
   }
 
   /**
-   * Extract domain from URL
-   * @param {string} url - The URL
-   * @returns {string} - The domain
+   * Extrae el dominio de una URL.
+   * @param {string} url - La URL.
+   * @returns {string} El dominio extraído o la URL original si falla.
    */
   extractDomain(url) {
     try {
@@ -332,9 +313,26 @@ class SecurityPopupManager {
   }
 }
 
-// Create singleton instance
+/**
+ * Instancia única del gestor de popups.
+ * @type {SecurityPopupManager}
+ */
 const popupManager = new SecurityPopupManager();
 
-// Export public API
+/**
+ * Muestra el popup de advertencia.
+ * @function
+ * @param {string} url - La URL analizada.
+ * @param {Object} securityInfo - Información de seguridad.
+ * @param {Function} onProceed - Callback si el usuario decide continuar.
+ * @param {Function} onCancel - Callback si el usuario cancela.
+ * @returns {Promise<void>}
+ */
 export const show = popupManager.show.bind(popupManager);
+
+/**
+ * Oculta cualquier popup de advertencia.
+ * @function
+ * @returns {void}
+ */
 export const hide = popupManager.hide.bind(popupManager);
