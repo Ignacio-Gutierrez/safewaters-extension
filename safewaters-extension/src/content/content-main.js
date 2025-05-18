@@ -116,7 +116,6 @@ class SafeWatersController {
     console.log('SafeWaters: Link intercepted:', url);
 
     try {
-      // Consulta la API directamente
       const securityInfo = await this.getSecurityInfo(url);
       this.handleNavigation(url, securityInfo);
     } catch (error) {
@@ -154,6 +153,7 @@ class SafeWatersController {
       severity = SEVERITY.MALICIOUS;
     }
     return {
+      url: url,
       domain: apiResult.domain || fallbackDomain,
       info: apiResult.info || "No additional information available",
       source: apiResult.source || "Unknown",
@@ -201,9 +201,9 @@ class SafeWatersController {
     showSecurityPopup(
       url,
       {
-        domain: domain,
-        info: `Could not verify the security of this link due to an error: ${error.message}. Proceed with caution.`,
-        severity: SEVERITY.UNCERTAIN
+      domain: domain,
+      info: `No se pudo verificar la seguridad de este enlace debido a un error. Proceda con precaución.`,
+      severity: SEVERITY.UNCERTAIN
       },
       () => { window.location.href = url; },
       () => { /* El popup se oculta solo si cancela */ }
