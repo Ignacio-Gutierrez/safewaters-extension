@@ -66,15 +66,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 console.log('SafeWaters: Token saved permanently');
 
-                showStatus(`¡Éxito! Token validado correctamente`, 'success');
+                showStatus(`¡Éxito! Token validado correctamente - Continuando...`, 'success');
                 
                 // Actualizar información del perfil
                 profileInfo.textContent = `Token vinculado exitosamente`;
                 
-                // Avanzar al siguiente paso
+                // Avanzar al siguiente paso más rápido
                 setTimeout(() => {
                     nextStep();
-                }, 1500);
+                }, 600);
                 
             } else {
                 let errorMessage = 'Token inválido';
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const savedConfig = await chrome.storage.local.get(['profileToken']);
             
             if (savedConfig.profileToken) {
-                showStatus('✅ Token guardado permanentemente en Chrome. ¡SafeWaters está listo!', 'success');
+                showStatus('✅ Token guardado permanentemente en Chrome. ¡SafeWaters está listo! - Cerrando...', 'success');
                 console.log('SafeWaters: Token verified and saved permanently');
             } else {
                 showStatus('⚠️ Error: El token no se guardó correctamente. Por favor, intenta nuevamente.', 'error');
@@ -206,10 +206,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Cerrar la ventana de configuración
+        // Cerrar la ventana de configuración más rápido
         setTimeout(() => {
             window.close();
-        }, 2000);
+        }, 300);
     }
 
     // Inicializar con el primer paso
