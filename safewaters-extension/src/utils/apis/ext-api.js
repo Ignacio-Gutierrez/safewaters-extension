@@ -1,22 +1,5 @@
-/**
- * @fileoverview Proporciona una función para obtener la API de almacenamiento y runtime de Chrome.
- * @module utils/apis/ext-api
- */
-
 let api = null;
 let logged = false;
-
-/**
- * Obtiene la API de almacenamiento y runtime para Chrome.
- *
- * @function
- * @returns {Object} Un objeto con las APIs de almacenamiento (`storage`), runtime (`runtime`) y pestañas (`tabs`) de Chrome.
- * @throws {Error} Si no se encuentra una API de almacenamiento compatible.
- *
- * @example
- * const extAPI = getExtAPI();
- * extAPI.storage.get(['key'], (result) => { ... });
- */
 
 export function getExtAPI() {
     if (api) {
