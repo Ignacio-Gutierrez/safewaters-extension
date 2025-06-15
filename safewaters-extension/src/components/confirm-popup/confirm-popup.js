@@ -1,4 +1,4 @@
-import { getExtAPI } from '../utils/apis/ext-api.js';
+import { getExtAPI } from '../../utils/apis/ext-api.js';
 
 /**
  * Rutas y nombres de elementos usados por el popup de confirmación.
@@ -6,8 +6,8 @@ import { getExtAPI } from '../utils/apis/ext-api.js';
  * @enum {Object}
  */
 const PATHS = {
-  POPUP_HTML: 'confirm-popup/confirm-popup.html',
-  POPUP_CSS: 'confirm-popup/confirm-popup.css',
+  POPUP_HTML: 'src/components/confirm-popup/confirm-popup.html',
+  POPUP_CSS: 'src/components/confirm-popup/confirm-popup.css',
   ICON_MALICIOUS: 'icons/logo-rojo.svg',
   ICON_UNCERTAIN: 'icons/logo-naranja.svg'
 };
