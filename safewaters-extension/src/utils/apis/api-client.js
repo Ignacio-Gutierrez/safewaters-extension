@@ -31,3 +31,33 @@ export async function testUrl(url) {
         throw new Error(errorInfo.message);
     }
 }
+
+export async function validateToken(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/managed_profiles/validate-token`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({ token })
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+            return { 
+                valid: false, 
+                error: result.detail || 'Error de servidor',
+                httpStatus: response.status
+            };
+        }
+        
+        return { valid: result.valid || false };
+        
+    } catch (error) {
+        const errorInfo = handleApiError(error, 'validación de token');
+        return { 
+            valid: false, 
+            error: errorInfo.message,
+            errorType: errorInfo.error
+        };
+    }
+}
