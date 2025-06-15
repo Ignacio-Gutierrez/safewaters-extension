@@ -1,6 +1,6 @@
 import { getExtAPI } from '../utils/apis/ext-api.js';
 import { testUrl } from '../utils/apis/api-client.js';
-import { show as showSecurityPopup, hide as hideSecurityPopup } from '../confirm-popup/confirm-popup.js';
+import { show as showSecurityPopup, hide as hideSecurityPopup } from '../components/confirm-popup/confirm-popup.js';
 
 /**
  * Constantes para los niveles de severidad de la URL.
