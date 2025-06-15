@@ -99,11 +99,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function checkExistingConfiguration() {
         try {
+            // Verificar si se está abriendo para actualizar token
+            const urlParams = new URLSearchParams(window.location.search);
+            const isUpdating = urlParams.get('update') === 'true';
+            
             const result = await chrome.storage.local.get(['profileToken']);
             console.log('SafeWaters: Checking existing token');
             
-            if (result.profileToken) {
-                // Ya tiene token, mostrar información y saltar al último paso
+            if (result.profileToken && !isUpdating) {
+                // Ya tiene token y NO está actualizando, mostrar información y saltar al último paso
                 profileInfo.textContent = `Token ya configurado`;
                 
                 // Mostrar mensaje de éxito
@@ -111,7 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 goToStep(3);
             } else {
-                console.log('SafeWaters: No existing token found');
+                if (isUpdating) {
+                    console.log('SafeWaters: Opening for token update');
+                    showStatus('Ingresa tu nuevo token para actualizar la configuración.', 'info');
+                } else {
+                    console.log('SafeWaters: No existing token found');
+                }
             }
         } catch (error) {
             console.error('Error checking configuration:', error);

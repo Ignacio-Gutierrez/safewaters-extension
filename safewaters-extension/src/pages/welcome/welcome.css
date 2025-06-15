@@ -281,6 +281,12 @@ main {
     border: 1px solid #bee5eb;
 }
 
+.status.info {
+    background: #d1f2eb;
+    color: #0c5460;
+    border: 1px solid #a2d9ce;
+}
+
 .hidden {
     display: none;
 }

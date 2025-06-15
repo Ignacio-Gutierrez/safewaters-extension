@@ -83,8 +83,15 @@ extAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     
     if (request.action === 'openWelcomePage') {
+        let welcomeUrl = extAPI.runtime.getURL('src/pages/welcome/welcome.html');
+        
+        // Si se solicita actualizar token, agregar parámetro
+        if (request.updateToken) {
+            welcomeUrl += '?update=true';
+        }
+        
         extAPI.tabs.create({
-            url: extAPI.runtime.getURL('src/pages/welcome/welcome.html')
+            url: welcomeUrl
         });
         sendResponse({ success: true });
     }
