@@ -13,7 +13,7 @@ function handleApiError(error, operation) {
 
 export async function testUrl(data) {
     try {
-        const response = await fetch(`${API_BASE_URL}/check`, {
+        const response = await fetch(`${API_BASE_URL}/api/check`, {
             method: "POST",
             body: JSON.stringify(data),
             headers: { "Content-Type": "application/json" }
@@ -34,7 +34,7 @@ export async function testUrl(data) {
 
 export async function validateToken(token) {
     try {
-        const response = await fetch(`${API_BASE_URL}/managed_profiles/validate-token`, {
+        const response = await fetch(`${API_BASE_URL}/api/managed_profiles/validate-token`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({ token })
