@@ -1,5 +1,5 @@
 // SafeWaters Extension Background Script
-import { validateToken } from '../utils/apis/api-client.js';
+import { validateToken, testUrl } from '../utils/apis/api-client.js';
 import { getExtAPI } from '../utils/apis/ext-api.js';
 
 console.log('SafeWaters background script loaded');
@@ -96,6 +96,46 @@ extAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
     }
 });
+
+// Agregar listener para mensajes del content script
+extAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('SafeWaters: Background received message:', message);
+    
+    if (message.action === 'checkUrl') {
+        handleUrlCheck(message.url)
+            .then(result => {
+                console.log('SafeWaters: URL check result:', result);
+                sendResponse({ success: true, data: result });
+            })
+            .catch(error => {
+                console.error('SafeWaters: URL check error:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+        
+        // Devolver true para indicar respuesta asíncrona
+        return true;
+    }
+});
+
+// Manejar verificación de URL
+async function handleUrlCheck(url) {
+    try {
+        // Obtener token del storage
+        const result = await extAPI.storage.get(['profileToken']);
+        
+        if (!result.profileToken) {
+            throw new Error('Token de perfil no encontrado');
+        }
+
+        // Usar testUrl del api-client para verificar la URL
+        const apiResult = await testUrl(url, result.profileToken);
+        
+        return apiResult;
+    } catch (error) {
+        console.error('SafeWaters: Error checking URL in background:', error);
+        throw error;
+    }
+}
 
 // Función para verificar configuración (usada por content scripts)
 async function checkConfiguration() {
