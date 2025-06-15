@@ -1,28 +1,14 @@
 import { getExtAPI } from "../utils/apis/ext-api.js";
 
-/**
- * Elemento de estado del popup.
- * @type {HTMLElement}
- */
+// Elementos del DOM
 const statusElement = document.getElementById('status');
-
-/**
- * Checkbox para activar o desactivar SafeWaters.
- * @type {HTMLInputElement}
- */
 const enableSafeWatersCheckbox = document.getElementById("enableSafeWaters");
+const updateTokenBtn = document.getElementById("updateTokenBtn");
 
-/**
- * API de extensión obtenida mediante getExtAPI.
- * @type {Object}
- */
+// API de extensión
 const extAPI = getExtAPI();
 
-/**
- * Actualiza el estado visual del popup según si la protección está activa.
- * @param {boolean} isActive - Indica si la protección está activa.
- * @returns {void}
- */
+// Actualizar estado visual del popup
 function updateStatus(isActive) {
   if (isActive) {
     statusElement.innerHTML = '<img src="../../assets/sailing.svg" alt="sailing"> Protección en curso';
@@ -34,9 +20,22 @@ function updateStatus(isActive) {
 }
 
 if (extAPI && extAPI.storage && extAPI.runtime) {
-  /**
-   * Obtiene el estado inicial de SafeWaters y actualiza la interfaz.
-   */
+  // Manejar clic del botón actualizar token
+  updateTokenBtn.addEventListener("click", function() {
+    extAPI.runtime.sendMessage({ 
+      action: 'openWelcomePage', 
+      updateToken: true 
+    }, (response) => {
+      if (extAPI.runtime.lastError) {
+        console.error('Error opening welcome page:', extAPI.runtime.lastError);
+      } else if (response && response.success) {
+        console.log('Welcome page opened for token update');
+        window.close();
+      }
+    });
+  });
+
+  // Obtener estado inicial de SafeWaters
   extAPI.storage.get(['safewatersActive'], (result) => {
     const lastError = extAPI.runtime.lastError;
     if (lastError) {
@@ -61,25 +60,20 @@ if (extAPI && extAPI.storage && extAPI.runtime) {
     updateStatus(isActive);
   });
 
-  /**
-   * Maneja el cambio de estado del checkbox y actualiza el almacenamiento.
-   */
+  // Manejar cambio de estado del checkbox
   enableSafeWatersCheckbox.addEventListener("change", function (event) {
     const isActive = event.target.checked;
     updateStatus(isActive);
     extAPI.storage.set({ safewatersActive: isActive }, () => {
       if (extAPI.runtime.lastError) {
         console.error(`SafeWaters Popup: Error setting active state: ${extAPI.runtime.lastError.message}`);
-      } else {
-        // console.log(`SafeWaters Popup: State set to active: ${isActive}`);
       }
     });
   });
 } else {
-  /**
-   * Deshabilita la funcionalidad del popup si las APIs no están disponibles.
-   */
+  // Deshabilitar funcionalidad si las APIs no están disponibles
   enableSafeWatersCheckbox.disabled = true;
+  updateTokenBtn.disabled = true;
   statusElement.innerHTML = '<img src="../../assets/compass_off.svg" alt="compass"> Sin coordenadas';
   statusElement.style.color = 'orange';
   console.error("SafeWaters Popup: Extension APIs not available, popup functionality disabled.");
