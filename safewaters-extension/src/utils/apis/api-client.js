@@ -11,11 +11,16 @@ function handleApiError(error, operation) {
     return { error: 'UNKNOWN_ERROR', message: error.message };
 }
 
-export async function testUrl(data) {
+export async function testUrl(url, profileToken) {
     try {
+        const requestData = {
+            profile_token: profileToken,
+            url: url
+        };
+        
         const response = await fetch(`${API_BASE_URL}/api/check`, {
             method: "POST",
-            body: JSON.stringify(data),
+            body: JSON.stringify(requestData),
             headers: { "Content-Type": "application/json" }
         });
         
