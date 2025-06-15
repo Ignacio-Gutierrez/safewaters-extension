@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeWaters - Configuración Inicial</title>
+    <link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="../../../public/icons/logo.svg" alt="SafeWaters Logo" class="logo-img">
+                <h1 class="pirata-one">SafeWaters</h1>
+            </div>
+            <p class="subtitle">Tu extensión de navegación segura está casi lista</p>
+        </header>
+
+        <main>
+            <div class="progress-bar">
+                <div class="progress-step active" data-step="1">1</div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="2">2</div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="3">3</div>
+            </div>
+
+            <section class="step active" id="step1">
+                <div class="step-content">
+                    <h2>Paso 1: Obtén tu token del Dashboard</h2>
+                    <div class="instruction-cards">
+                        <div class="card">
+                            <div class="card-number">1</div>
+                            <div class="card-content">
+                                <h3>Accede al Dashboard</h3>
+                                <p>Ve al <strong>Dashboard de SafeWaters</strong> e inicia sesión con tu cuenta de padre/administrador</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-number">2</div>
+                            <div class="card-content">
+                                <h3>Crea o selecciona un Perfil</h3>
+                                <p>En la sección <strong>"Perfiles Gestionados"</strong>, crea un nuevo perfil para tu hijo o selecciona uno existente</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-number">3</div>
+                            <div class="card-content">
+                                <h3>Copia el Token</h3>
+                                <p>Copia el <strong>Token del Perfil</strong> que aparece en la información del perfil seleccionado</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-primary" id="nextStepBtn">¡Ya tengo mi token!</button>
+                </div>
+            </section>
+
+            <section class="step" id="step2">
+                <div class="step-content">
+                    <h2>Paso 2: Configura tu extensión</h2>
+                    <div class="token-form">
+                        <label for="profileToken">Pega tu token aquí:</label>
+                        <input type="text" id="profileToken" placeholder="Ej: usuario-perfil-abc12345">
+                        <div class="form-actions">
+                            <button id="validateToken" class="btn-primary">Validar y Configurar</button>
+                            <button class="btn-secondary" id="prevStepBtn">Volver</button>
+                        </div>
+                    </div>
+                    <div id="status" class="status hidden"></div>
+                </div>
+            </section>
+
+            <section class="step" id="step3">
+                <div class="step-content">
+                    <h2>¡Configuración Completada!</h2>
+                    <div class="success-message">
+                        <div class="success-icon">✅</div>
+                        <h3>SafeWaters está activo</h3>
+                        <p id="profileInfo">Perfil vinculado exitosamente</p>
+                        <div class="persistence-info">
+                            <p><strong>Tu configuración se ha guardado permanentemente en Chrome</strong></p>
+                            <p>No necesitarás volver a configurar SafeWaters. La extensión recordará tu token y funcionará automáticamente en todas las páginas web.</p>
+                        </div>
+                        <button class="btn-primary" id="finishSetupBtn">Finalizar configuración</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="welcome.js"></script>
+</body>
+</html>
