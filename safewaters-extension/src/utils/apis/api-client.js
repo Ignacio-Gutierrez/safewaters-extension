@@ -11,11 +11,11 @@ function handleApiError(error, operation) {
     return { error: 'UNKNOWN_ERROR', message: error.message };
 }
 
-export async function testUrl(url) {
+export async function testUrl(data) {
     try {
         const response = await fetch(`${API_BASE_URL}/check`, {
             method: "POST",
-            body: JSON.stringify({ url }),
+            body: JSON.stringify(data),
             headers: { "Content-Type": "application/json" }
         });
         
