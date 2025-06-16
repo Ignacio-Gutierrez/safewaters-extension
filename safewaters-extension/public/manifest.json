@@ -13,7 +13,9 @@
     "permissions": [
         "activeTab",
         "scripting",
-        "storage"
+        "storage",
+        "webNavigation",
+        "tabs"
     ],
     "host_permissions": [
         "<all_urls>"
