@@ -49,8 +49,6 @@
                 "assets/*.js",
                 "assets/*.css",
                 "src/**/*.js",
-                "src/components/confirm-popup/confirm-popup.html",
-                "src/components/confirm-popup/confirm-popup.css",
                 "src/pages/welcome/welcome.html",
                 "src/pages/welcome/welcome.css"
             ],
