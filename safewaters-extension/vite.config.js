@@ -7,7 +7,6 @@ export default defineConfig({
       input: {
         // Scripts principales
         background: resolve(__dirname, 'src/background/background.js'),
-        content: resolve(__dirname, 'src/content/content.js'),
         'content-simple': resolve(__dirname, 'src/content/content-simple.js'),
         
         // Páginas HTML
@@ -17,11 +16,6 @@ export default defineConfig({
         // Scripts de páginas
         'popup-script': resolve(__dirname, 'src/popup/popup.js'),
         'welcome-script': resolve(__dirname, 'src/pages/welcome/welcome.js'),
-        
-        // Scripts de componentes
-        'confirm-popup-script': resolve(__dirname, 'src/components/confirm-popup/confirm-popup.js'),
-        'confirm-popup-html': resolve(__dirname, 'src/components/confirm-popup/confirm-popup.html'),
-        'confirm-popup-css': resolve(__dirname, 'src/components/confirm-popup/confirm-popup.css'),
       },
       external: (id) => {
         // No externalizar nada - incluir todas las dependencias
@@ -37,9 +31,6 @@ export default defineConfig({
           if (chunkInfo.name === 'background') {
             return 'src/background/background.js'
           }
-          if (chunkInfo.name === 'content') {
-            return 'src/content/content.js'
-          }
           if (chunkInfo.name === 'content-simple') {
             return 'src/content/content-simple.js'
           }
@@ -49,9 +40,7 @@ export default defineConfig({
           if (chunkInfo.name === 'popup-script') {
             return 'src/popup/popup.js'
           }
-          if (chunkInfo.name === 'confirm-popup-script') {
-            return 'src/components/confirm-popup/confirm-popup.js'
-          }
+          // No incluir confirm-popup-script ya que está integrado en content-simple
           return 'assets/[name].js'
         },
         chunkFileNames: 'assets/[name].js',
@@ -68,12 +57,6 @@ export default defineConfig({
           }
           if (assetInfo.name === 'popup.css') {
             return 'src/popup/popup.css'
-          }
-          if (assetInfo.name === 'confirm-popup.html') {
-            return 'src/components/confirm-popup/confirm-popup.html'
-          }
-          if (assetInfo.name === 'confirm-popup.css' || assetInfo.name === 'confirm-popup-css.css') {
-            return 'src/components/confirm-popup/confirm-popup.css'
           }
           return 'assets/[name][extname]'
         }
