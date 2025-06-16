@@ -20,7 +20,9 @@ export function getExtAPI() {
                 onChanged: chrome.storage.onChanged
             },
             runtime: chrome.runtime,
-            tabs: chrome.tabs
+            tabs: chrome.tabs,
+            webNavigation: chrome.webNavigation,
+            scripting: chrome.scripting
         };
         return api;
     }
