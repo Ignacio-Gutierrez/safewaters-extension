@@ -97,17 +97,29 @@ class SafeWatersController {
       info: data.info || 'No additional information available',
       source: data.source || 'Unknown',
       malicious: data.malicious || false,
-      severity: severity
+      severity: severity,
+      // Incluir información de bloqueo por reglas de usuario
+      is_blocked_by_user_rule: data.is_blocked_by_user_rule || false,
+      blocking_rule_details: data.blocking_rule_details || null
     };
   }
 
   handleNavigation(url, securityInfo) {
+    // Verificar si está bloqueado por reglas de usuario (ACCESO DENEGADO)
+    if (securityInfo.is_blocked_by_user_rule) {
+      console.log('SafeWaters: URL blocked by user rule - access denied');
+      this.showBlockedByRulePopup(url, securityInfo);
+      return;
+    }
+
+    // URLs seguras pasan directamente
     if (securityInfo.severity === SEVERITY.SAFE) {
       console.log('SafeWaters: URL deemed safe, redirecting');
       window.location.href = url;
       return;
     }
 
+    // URLs maliciosas o inciertas - mostrar popup con opción de continuar
     console.log(`SafeWaters: Showing warning popup for ${securityInfo.severity} URL`);
     
     const enhancedInfo = {
@@ -147,95 +159,387 @@ class SafeWatersController {
     }
   }
 
-  // Mostrar popup usando el sistema modular existente
-  async showSecurityPopup(url, securityInfo, onConfirm, onCancel) {
-    try {
-      // Importar dinámicamente el módulo del popup para evitar problemas de ES6
-      const popupModule = await this.loadPopupModule();
-      
-      if (popupModule && popupModule.show) {
-        // Usar el sistema de popup modular existente
-        popupModule.show(url, securityInfo, onConfirm, onCancel);
-      } else {
-        // Fallback a popup inline si no se puede cargar el módulo
-        this.showFallbackPopup(url, securityInfo, onConfirm, onCancel);
-      }
-    } catch (error) {
-      console.warn('SafeWaters: Could not load popup module, using fallback:', error);
-      this.showFallbackPopup(url, securityInfo, onConfirm, onCancel);
-    }
-  }
-
-  // Cargar el módulo del popup dinámicamente
-  async loadPopupModule() {
-    try {
-      // Intentar cargar el módulo usando import() dinámico
-      const baseUrl = chrome.runtime.getURL('');
-      const moduleUrl = baseUrl + 'src/components/confirm-popup/confirm-popup.js';
-      
-      console.log('SafeWaters: Loading popup module from:', moduleUrl);
-      const module = await import(moduleUrl);
-      return module;
-    } catch (error) {
-      console.warn('SafeWaters: Failed to load popup module:', error);
-      return null;
-    }
-  }
-
-  // Popup de fallback inline (simplificado)
-  showFallbackPopup(url, securityInfo, onConfirm, onCancel) {
-    console.log('SafeWaters: Using fallback popup');
+  // Mostrar popup usando el sistema confirm-popup integrado
+  showSecurityPopup(url, securityInfo, onConfirm, onCancel) {
+    console.log('SafeWaters: Showing security popup using confirm-popup system');
     
-    // Crear popup inline simplificado como fallback
-    const popupHtml = `
-      <div id="safewaters-popup-overlay" style="
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-        background: rgba(0,0,0,0.8); z-index: 999999;
-        display: flex; align-items: center; justify-content: center;
-        font-family: system-ui, -apple-system, sans-serif;
-      ">
-        <div style="
-          background: white; padding: 30px; border-radius: 10px; max-width: 500px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;
-        ">
-          <h2 style="color: #d32f2f; margin-bottom: 20px;">⚠️ Advertencia de Seguridad</h2>
-          <p style="margin-bottom: 15px; color: #333;"><strong>Dominio:</strong> ${securityInfo.domain}</p>
-          <p style="margin-bottom: 20px; color: #666; line-height: 1.5;">${securityInfo.info}</p>
-          <div style="display: flex; gap: 15px; justify-content: center;">
-            <button id="safewaters-cancel" style="
-              background: #f44336; color: white; border: none; padding: 12px 25px;
-              border-radius: 5px; cursor: pointer; font-size: 16px;
-            ">🛡️ Cancelar</button>
-            <button id="safewaters-continue" style="
-              background: #ff9800; color: white; border: none; padding: 12px 25px;
-              border-radius: 5px; cursor: pointer; font-size: 16px;
-            ">⚡ Continuar</button>
+    // Crear instancia del popup manager
+    const popupManager = new SecurityPopupManager();
+    popupManager.show(url, securityInfo, onConfirm, onCancel);
+  }
+
+  // Mostrar popup de bloqueo por reglas de usuario (sin opción de continuar)
+  showBlockedByRulePopup(url, securityInfo) {
+    console.log('SafeWaters: Showing blocked by user rule popup');
+    
+    // Crear instancia del popup manager y usar método específico
+    const popupManager = new SecurityPopupManager();
+    popupManager.showBlockedByRulePopup(url, securityInfo);
+  }
+}
+
+/**
+ * Clase SecurityPopupManager copiada de confirm-popup para uso directo
+ */
+class SecurityPopupManager {
+  constructor() {
+    this.onProceedCallback = null;
+    this.onCancelCallback = null;
+  }
+
+  async show(url, securityInfo, onProceed, onCancel) {
+    console.log('SafeWaters: Showing confirmation popup for URL:', url);
+    this.onProceedCallback = onProceed;
+    this.onCancelCallback = onCancel;
+    
+    await this.injectPopupResources();
+    const popupConfig = this.getPopupConfigForSeverity(securityInfo);
+    
+    if (!popupConfig) {
+      console.error(`SafeWaters: Unknown severity level: ${securityInfo.severity}`);
+      return;
+    }
+    
+    this.setupAndShowPopup(url, securityInfo, popupConfig);
+  }
+
+  hide() {
+    const containers = [
+      document.getElementById('safewaters-confirmation-popup-container-malicious'),
+      document.getElementById('safewaters-confirmation-popup-container-uncertain'),
+      document.getElementById('safewaters-confirmation-popup-container-blocked')
+    ];
+    containers.forEach(container => {
+      if (container) {
+        container.style.display = 'none';
+      }
+    });
+    this.onProceedCallback = null;
+    this.onCancelCallback = null;
+  }
+
+  getPopupConfigForSeverity(securityInfo) {
+    const configs = {
+      'malicious': {
+        containerId: 'safewaters-confirmation-popup-container-malicious',
+        messageId: 'sw-popup-message-malicious',
+        iconId: 'sw-popup-icon-malicious',
+        iconPath: 'icons/logo-rojo.svg',
+        messageTemplate: (url, securityInfo) => `¡PELIGRO! El enlace a "${securityInfo.domain}" parece ser malicioso.`
+      },
+      'uncertain': {
+        containerId: 'safewaters-confirmation-popup-container-uncertain',
+        messageId: 'sw-popup-message-uncertain',
+        iconId: 'sw-popup-icon-uncertain',
+        iconPath: 'icons/logo-naranja.svg',
+        messageTemplate: (url, securityInfo) => `¡PRECAUCIÓN! No se pudo verificar completamente la seguridad del enlace a "${securityInfo.domain}". Procede con cuidado.`
+      },
+      'blocked': {
+        containerId: 'safewaters-confirmation-popup-container-blocked',
+        messageId: 'sw-popup-message-blocked',
+        iconId: 'sw-popup-icon-blocked',
+        iconPath: 'icons/logo-rojo.svg',
+        messageTemplate: (url, securityInfo) => `El sitio "${securityInfo.domain}" ha sido bloqueado por el administrador.`
+      }
+    };
+    return configs[securityInfo.severity] || null;
+  }
+
+  setupAndShowPopup(url, securityInfo, popupConfig) {
+    // Ocultar todos los popups
+    ['malicious', 'uncertain', 'blocked'].forEach(type => {
+      const container = document.getElementById(`safewaters-confirmation-popup-container-${type}`);
+      if (container) {
+        container.style.display = 'none';
+      }
+    });
+
+    // Obtener elementos del popup activo
+    const activeContainer = document.getElementById(popupConfig.containerId);
+    const messageElement = document.getElementById(popupConfig.messageId);
+    const iconElement = document.getElementById(popupConfig.iconId);
+
+    if (!activeContainer || !messageElement || !iconElement) {
+      throw new Error(`Popup elements not found for severity: ${securityInfo.severity}`);
+    }
+
+    // Actualizar contenido
+    messageElement.textContent = popupConfig.messageTemplate(url, securityInfo);
+    iconElement.src = chrome.runtime.getURL(popupConfig.iconPath);
+
+    // Configurar eventos y mostrar
+    if (securityInfo.severity === 'blocked') {
+      this.setupBlockedEventListeners(activeContainer);
+    } else {
+      this.setupEventListeners(activeContainer);
+    }
+    activeContainer.style.display = 'flex';
+  }
+
+  async injectPopupResources() {
+    await Promise.all([
+      this.injectPopupHTML(),
+      this.injectPopupCSS()
+    ]);
+  }
+
+  async injectPopupHTML() {
+    if (document.getElementById('safewaters-confirmation-popup-container-malicious') || 
+        document.getElementById('safewaters-confirmation-popup-container-uncertain') ||
+        document.getElementById('safewaters-confirmation-popup-container-blocked')) {
+      return;
+    }
+
+    const html = `
+    <div id="safewaters-confirmation-popup-container-malicious" class="safewaters-preview-popup">
+      <div class="sw-popup-content sw-popup-malicious">
+        <div class="sw-message-content">
+          <img id="sw-popup-icon-malicious" src="" alt="Icono de advertencia roja" />
+          <div>
+            <h3 class="sw-popup-title">¡Alerta, Navegante!</h3>
+            <p id="sw-popup-message-malicious"></p>
           </div>
         </div>
+        <div class="sw-popup-buttons">
+          <button id="sw-popup-proceed-button">Navegar bajo riesgo</button>
+          <button id="sw-popup-cancel-button">Volver a puerto seguro</button>
+        </div>
       </div>
+    </div>
+
+    <div id="safewaters-confirmation-popup-container-uncertain" class="safewaters-preview-popup">
+      <div class="sw-popup-content sw-popup-uncertain">
+        <div class="sw-message-content">
+          <img id="sw-popup-icon-uncertain" src="" alt="Icono de advertencia naranja" />
+          <div>
+            <h3 class="sw-popup-title">¡Alerta, Navegante!</h3>
+            <p id="sw-popup-message-uncertain"></p>
+          </div>
+        </div>
+        <div class="sw-popup-buttons">
+          <button id="sw-popup-proceed-button">Navegar bajo riesgo</button>
+          <button id="sw-popup-cancel-button">Volver a puerto seguro</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="safewaters-confirmation-popup-container-blocked" class="safewaters-preview-popup">
+      <div class="sw-popup-content sw-popup-blocked">
+        <div class="sw-message-content">
+          <img id="sw-popup-icon-blocked" src="" alt="Icono de bloqueo" />
+          <div>
+            <h3 class="sw-popup-title">¡Acceso Denegado!</h3>
+            <p id="sw-popup-message-blocked"></p>
+          </div>
+        </div>
+        <div class="sw-popup-buttons">
+          <button id="sw-popup-understood-button">Entendido</button>
+        </div>
+      </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+  }
+
+  async injectPopupCSS() {
+    if (document.getElementById('safewaters-confirm-popup-styles')) {
+      return;
+    }
+
+    const style = document.createElement('style');
+    style.id = 'safewaters-confirm-popup-styles';
+    style.textContent = `
+    /* Estilos exactos del confirm-popup original */
+    body {
+        font-family: Arial, sans-serif;
+    }
+
+    /* Contenedor principal del Popup: para posicionamiento y visibilidad */
+    .safewaters-preview-popup {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2147483647;
+    }
+    .sw-popup-content {
+        background-color: #E8DED2;
+        padding: 25px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        border-radius: 8px;
+        min-width: 300px;
+        max-width: 500px;
+    }
+
+    .sw-message-content p {
+        color: black;
+    }
+
+    .sw-message-content {
+        display: flex;        
+        gap: 12px;
+        align-items: center;
+    }
+
+    .sw-popup-title {
+        margin-top: 0;
+        color: black;
+        font-weight: bold;
+    }
+
+    .sw-popup-buttons button {
+        padding: 10px 15px;
+        margin: 0 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    /* popup MALICIOSO */
+    .safewaters-preview-popup .sw-popup-malicious #sw-popup-icon-malicious {
+        width: 100px;
+        height: 100px;
+        display: inline-block;
+        object-fit: contain;
+    }
+
+    .sw-popup-malicious {
+        border: 3px solid #D7263D;
+    }
+
+    .sw-popup-malicious #sw-popup-proceed-button {
+        background-color: #D7263D;
+        color: white;
+        border: 1px solid #8B1E3F;
+    }
+
+    .sw-popup-malicious #sw-popup-proceed-button:hover {
+        color: white;
+        background-color: #8B1E3F;
+    }
+
+    .sw-popup-malicious #sw-popup-cancel-button {
+        background-color: white;
+        color: black;
+    }
+    .sw-popup-malicious #sw-popup-cancel-button:hover {
+        color: white;
+        background-color: gray;
+    }
+
+    /* popup INCIERTO */
+    .safewaters-preview-popup .sw-popup-uncertain #sw-popup-icon-uncertain {
+        width: 100px;
+        height: 100px;
+        display: inline-block;
+        object-fit: contain;
+    }
+
+    .sw-popup-uncertain {
+        border: 3px solid #FF8C00;
+    }
+    .sw-popup-uncertain #sw-popup-proceed-button {
+        background-color: #FF8C00;
+        color: black;
+        border: 1px solid #D2691E;
+    }
+    .sw-popup-uncertain #sw-popup-proceed-button:hover {
+        color: white;
+        background-color: #D2691E;
+    }
+
+    .sw-popup-uncertain #sw-popup-cancel-button {
+        background-color: white;
+        color: black;
+    }
+    .sw-popup-uncertain #sw-popup-cancel-button:hover {
+        color: white;
+        background-color: gray;
+    }
+
+    /* popup BLOQUEADO */
+    .safewaters-preview-popup .sw-popup-blocked #sw-popup-icon-blocked {
+        width: 100px;
+        height: 100px;
+        display: inline-block;
+        object-fit: contain;
+    }
+
+    .sw-popup-blocked {
+        border: 3px solid #D7263D;
+    }
+    .sw-popup-blocked #sw-popup-understood-button {
+        background-color: #D7263D;
+        color: white;
+        border: 1px solid #8B1E3F;
+    }
+    .sw-popup-blocked #sw-popup-understood-button:hover {
+        color: white;
+        background-color: #8B1E3F;
+    }
     `;
 
-    const popupContainer = document.createElement('div');
-    popupContainer.innerHTML = popupHtml;
-    document.body.appendChild(popupContainer);
+    document.head.appendChild(style);
+  }
 
-    // Event listeners
-    document.getElementById('safewaters-continue').addEventListener('click', () => {
-      document.body.removeChild(popupContainer);
-      onConfirm();
-    });
+  setupEventListeners(containerElement) {
+    const proceedButton = containerElement.querySelector('#sw-popup-proceed-button');
+    const cancelButton = containerElement.querySelector('#sw-popup-cancel-button');
 
-    document.getElementById('safewaters-cancel').addEventListener('click', () => {
-      document.body.removeChild(popupContainer);
-      onCancel();
-    });
+    if (proceedButton) {
+      const newProceedButton = proceedButton.cloneNode(true);
+      proceedButton.parentNode.replaceChild(newProceedButton, proceedButton);
+      newProceedButton.onclick = () => {
+        if (this.onProceedCallback) {
+          this.onProceedCallback();
+        }
+        this.hide();
+      };
+    }
 
-    document.getElementById('safewaters-popup-overlay').addEventListener('click', (e) => {
-      if (e.target.id === 'safewaters-popup-overlay') {
-        document.body.removeChild(popupContainer);
-        onCancel();
-      }
-    });
+    if (cancelButton) {
+      const newCancelButton = cancelButton.cloneNode(true);
+      cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
+      newCancelButton.onclick = () => {
+        if (this.onCancelCallback) {
+          this.onCancelCallback();
+        }
+        this.hide();
+      };
+    }
+  }
+
+  setupBlockedEventListeners(containerElement) {
+    const understoodButton = containerElement.querySelector('#sw-popup-understood-button');
+
+    if (understoodButton) {
+      const newUnderstoodButton = understoodButton.cloneNode(true);
+      understoodButton.parentNode.replaceChild(newUnderstoodButton, understoodButton);
+      newUnderstoodButton.onclick = () => {
+        console.log('SafeWaters: User acknowledged blocked site');
+        this.hide();
+        // No redirigir - simplemente cerrar
+      };
+    }
+  }
+
+
+
+  // Mostrar popup de bloqueo independiente
+  showBlockedByRulePopup(url, securityInfo) {
+    console.log('SafeWaters: Showing blocked popup using dedicated blocked popup');
+    
+    // Usar popup específico de bloqueo
+    const blockedSecurityInfo = {
+      ...securityInfo,
+      severity: 'blocked'
+    };
+
+    // Usar el flujo estándar con popup específico
+    this.show(url, blockedSecurityInfo, null, null);
   }
 }
 
