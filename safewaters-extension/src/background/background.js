@@ -124,7 +124,16 @@ async function handleUrlCheck(url) {
         const result = await extAPI.storage.get(['profileToken']);
         
         if (!result.profileToken) {
-            throw new Error('Token de perfil no encontrado');
+            console.log('SafeWaters: No token found, opening welcome page');
+            // Abrir página de configuración automáticamente
+            extAPI.tabs.create({
+                url: extAPI.runtime.getURL('src/pages/welcome/welcome.html')
+            });
+            // Retornar estado especial en lugar de lanzar error
+            return {
+                needsConfiguration: true,
+                message: 'Token no encontrado - Abriendo página de configuración'
+            };
         }
 
         // Usar testUrl del api-client para verificar la URL

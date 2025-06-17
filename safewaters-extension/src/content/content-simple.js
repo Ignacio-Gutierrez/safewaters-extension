@@ -47,6 +47,14 @@ class SafeWatersController {
     
     try {
       const securityInfo = await this.getSecurityInfo(url);
+      
+      // Verificar si necesita configuración
+      if (securityInfo && securityInfo.needsConfiguration) {
+        console.log('SafeWaters: Configuration needed, ignoring navigation');
+        // Simplemente ignorar la navegación cuando no está configurado
+        return;
+      }
+      
       this.handleNavigation(url, securityInfo);
     } catch (error) {
       console.error('SafeWaters: Error analyzing URL:', error);
@@ -74,6 +82,16 @@ class SafeWatersController {
 
       if (response.error) {
         throw new Error(response.error);
+      }
+
+      // Verificar si necesita configuración
+      if (response.data && response.data.needsConfiguration) {
+        console.log('SafeWaters: Extension needs configuration - configuration page opened');
+        // No lanzar error, simplemente retornar estado especial
+        return {
+          needsConfiguration: true,
+          message: response.data.message
+        };
       }
 
       return this.processApiResult(url, response.data);
@@ -105,6 +123,8 @@ class SafeWatersController {
   }
 
   handleNavigation(url, securityInfo) {
+    console.log('SafeWaters: handleNavigation called with:', { url, securityInfo });
+    
     // Verificar si está bloqueado por reglas de usuario (ACCESO DENEGADO)
     if (securityInfo.is_blocked_by_user_rule) {
       console.log('SafeWaters: URL blocked by user rule - access denied');
@@ -162,6 +182,8 @@ class SafeWatersController {
   // Mostrar popup usando el sistema confirm-popup integrado
   showSecurityPopup(url, securityInfo, onConfirm, onCancel) {
     console.log('SafeWaters: Showing security popup using confirm-popup system');
+    console.log('SafeWaters: Security info:', securityInfo);
+    console.log('SafeWaters: URL:', url);
     
     // Crear instancia del popup manager
     const popupManager = new SecurityPopupManager();
@@ -171,6 +193,8 @@ class SafeWatersController {
   // Mostrar popup de bloqueo por reglas de usuario (sin opción de continuar)
   showBlockedByRulePopup(url, securityInfo) {
     console.log('SafeWaters: Showing blocked by user rule popup');
+    console.log('SafeWaters: Security info for blocked rule:', securityInfo);
+    console.log('SafeWaters: URL for blocked rule:', url);
     
     // Crear instancia del popup manager y usar método específico
     const popupManager = new SecurityPopupManager();
@@ -188,19 +212,30 @@ class SecurityPopupManager {
   }
 
   async show(url, securityInfo, onProceed, onCancel) {
+    console.log('SafeWaters: PopupManager.show() called');
     console.log('SafeWaters: Showing confirmation popup for URL:', url);
+    console.log('SafeWaters: Security info in popup manager:', securityInfo);
+    
     this.onProceedCallback = onProceed;
     this.onCancelCallback = onCancel;
     
-    await this.injectPopupResources();
-    const popupConfig = this.getPopupConfigForSeverity(securityInfo);
-    
-    if (!popupConfig) {
-      console.error(`SafeWaters: Unknown severity level: ${securityInfo.severity}`);
-      return;
+    try {
+      await this.injectPopupResources();
+      console.log('SafeWaters: Popup resources injected successfully');
+      
+      const popupConfig = this.getPopupConfigForSeverity(securityInfo);
+      console.log('SafeWaters: Popup config:', popupConfig);
+      
+      if (!popupConfig) {
+        console.error(`SafeWaters: Unknown severity level: ${securityInfo.severity}`);
+        return;
+      }
+      
+      this.setupAndShowPopup(url, securityInfo, popupConfig);
+      console.log('SafeWaters: Popup setup and show completed');
+    } catch (error) {
+      console.error('SafeWaters: Error in popup show:', error);
     }
-    
-    this.setupAndShowPopup(url, securityInfo, popupConfig);
   }
 
   hide() {
