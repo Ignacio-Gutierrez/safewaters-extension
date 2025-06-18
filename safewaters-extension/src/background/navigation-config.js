@@ -37,6 +37,27 @@ export const NavigationConfig = {
         'chrome.google.com/webstore'
     ],
 
+    // Dominios confiables que no necesitan verificación
+    trustedDomains: [
+        'google.com',
+        'www.google.com',
+        'gmail.com',
+        'youtube.com',
+        'www.youtube.com',
+        'github.com',
+        'www.github.com',
+        'stackoverflow.com',
+        'www.stackoverflow.com',
+        'microsoft.com',
+        'www.microsoft.com',
+        'apple.com',
+        'www.apple.com',
+        'wikipedia.org',
+        'www.wikipedia.org',
+        'mozilla.org',
+        'www.mozilla.org'
+    ],
+
     // Configuración de timeouts y delays
     timing: {
         navigationDelay: 0,        // Sin delay para navegación directa  
@@ -95,10 +116,22 @@ export const NavigationConfig = {
         }
     },
 
+    isTrustedDomain(url) {
+        try {
+            const urlObj = new URL(url);
+            return this.trustedDomains.some(domain => 
+                urlObj.hostname === domain || urlObj.hostname.endsWith('.' + domain)
+            );
+        } catch (e) {
+            return false;
+        }
+    },
+
     shouldIgnore(url) {
         return this.isSearchUrl(url) || 
                this.isSpecialProtocol(url) || 
-               this.isBrowserDomain(url);
+               this.isBrowserDomain(url) ||
+               this.isTrustedDomain(url);
     },
 
     log(message, level = 'info', data = null) {
