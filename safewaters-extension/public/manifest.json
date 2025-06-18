@@ -52,7 +52,11 @@
                 "assets/*.css",
                 "src/**/*.js",
                 "src/pages/welcome/welcome.html",
-                "src/pages/welcome/welcome.css"
+                "src/pages/welcome/welcome.css",
+                "src/pages/blocked/blocked.html",
+                "src/pages/blocked/blocked.css",
+                "src/pages/warning/warning.html",
+                "src/pages/warning/warning.css"
             ],
             "matches": [ "<all_urls>" ]
         }
