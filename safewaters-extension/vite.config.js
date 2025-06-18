@@ -12,59 +12,58 @@ export default defineConfig({
         // Páginas HTML
         popup: resolve(__dirname, 'src/popup/popup.html'),
         welcome: resolve(__dirname, 'src/pages/welcome/welcome.html'),
+        blocked: resolve(__dirname, 'src/pages/blocked/blocked.html'),
+        warning: resolve(__dirname, 'src/pages/warning/warning.html'),
+        uncertain: resolve(__dirname, 'src/pages/uncertain/uncertain.html'),
         
         // Scripts de páginas
         'popup-script': resolve(__dirname, 'src/popup/popup.js'),
         'welcome-script': resolve(__dirname, 'src/pages/welcome/welcome.js'),
-      },
-      external: (id) => {
-        // No externalizar nada - incluir todas las dependencias
-        return false;
+        'blocked-script': resolve(__dirname, 'src/pages/blocked/blocked.js'),
+        'warning-script': resolve(__dirname, 'src/pages/warning/warning.js'),
+        'uncertain-script': resolve(__dirname, 'src/pages/uncertain/uncertain.js'),
       },
       output: {
         // Usar formato ES para módulos
         format: 'es',
         inlineDynamicImports: false,
-        manualChunks: undefined,
         entryFileNames: (chunkInfo) => {
-          // Mantener estructura para background y content scripts
-          if (chunkInfo.name === 'background') {
-            return 'src/background/background.js'
+          // Mantener estructura de extensión
+          const scriptMap = {
+            'background': 'src/background/background.js',
+            'content-simple': 'src/content/content-simple.js',
+            'popup-script': 'src/popup/popup.js',
+            'welcome-script': 'src/pages/welcome/welcome.js',
+            'blocked-script': 'src/pages/blocked/blocked.js',
+            'warning-script': 'src/pages/warning/warning.js',
+            'uncertain-script': 'src/pages/uncertain/uncertain.js'
           }
-          if (chunkInfo.name === 'content-simple') {
-            return 'src/content/content-simple.js'
-          }
-          if (chunkInfo.name === 'welcome-script') {
-            return 'src/pages/welcome/welcome.js'
-          }
-          if (chunkInfo.name === 'popup-script') {
-            return 'src/popup/popup.js'
-          }
-          // No incluir confirm-popup-script ya que está integrado en content-simple
-          return 'assets/[name].js'
+          
+          return scriptMap[chunkInfo.name] || 'assets/[name].js'
         },
         chunkFileNames: 'assets/[name].js',
         assetFileNames: (assetInfo) => {
           // Mantener estructura para archivos específicos
-          if (assetInfo.name === 'welcome.html') {
-            return 'src/pages/welcome/welcome.html'
+          const assetMap = {
+            'popup.html': 'src/popup/popup.html',
+            'welcome.html': 'src/pages/welcome/welcome.html',
+            'blocked.html': 'src/pages/blocked/blocked.html',
+            'warning.html': 'src/pages/warning/warning.html',
+            'uncertain.html': 'src/pages/uncertain/uncertain.html',
+            'popup.css': 'src/popup/popup.css',
+            'welcome.css': 'src/pages/welcome/welcome.css',
+            'blocked.css': 'src/pages/blocked/blocked.css',
+            'warning.css': 'src/pages/warning/warning.css',
+            'uncertain.css': 'src/pages/uncertain/uncertain.css'
           }
-          if (assetInfo.name === 'popup.html') {
-            return 'src/popup/popup.html'
-          }
-          if (assetInfo.name === 'welcome.css') {
-            return 'src/pages/welcome/welcome.css'
-          }
-          if (assetInfo.name === 'popup.css') {
-            return 'src/popup/popup.css'
-          }
-          return 'assets/[name][extname]'
+          
+          return assetMap[assetInfo.name] || 'assets/[name][extname]'
         }
       }
     },
     target: 'esnext',
-    minify: false,  // Deshabilitar minificación para debugging
-    sourcemap: true  // Habilitar sourcemaps para debugging
+    minify: process.env.NODE_ENV === 'production',
+    sourcemap: process.env.NODE_ENV !== 'production'
   },
   publicDir: 'public'
 })

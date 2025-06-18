@@ -14,6 +14,7 @@ class SafeWatersController {
 
   initialize() {
     this.setupListeners();
+    this.setupMessageListeners();
     console.log("SafeWaters: Extension initialized and active");
   }
 
@@ -22,6 +23,39 @@ class SafeWatersController {
     const boundClickHandler = this.handleLinkClick.bind(this);
     document.body.addEventListener('click', boundClickHandler, true);
     console.log("SafeWaters: Click listener added to document.body");
+  }
+
+  setupMessageListeners() {
+    // Listener para mensajes del background script (navegación directa)
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.action === 'showDirectNavigationPopup') {
+        console.log('SafeWaters: Received direct navigation popup request:', message);
+        this.handleDirectNavigationPopup(message);
+        sendResponse({ success: true });
+      }
+    });
+  }
+
+  handleDirectNavigationPopup(message) {
+    const { popupType, url, securityInfo } = message;
+    
+    if (popupType === 'blocked') {
+      // Mostrar popup de bloqueo sin opción de continuar
+      this.showBlockedByRulePopup(url, securityInfo);
+    } else if (popupType === 'warning') {
+      // Mostrar popup de advertencia con opción de continuar
+      this.showSecurityPopup(url, securityInfo, () => {
+        // Si usuario confirma, navegar al sitio original
+        window.location.href = url;
+      }, () => {
+        // Si cancela, regresar o ir a página segura
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = 'about:blank';
+        }
+      });
+    }
   }
 
   async handleLinkClick(event) {

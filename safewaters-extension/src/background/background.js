@@ -1,11 +1,20 @@
 // SafeWaters Extension Background Script
 import { validateToken, testUrl } from '../utils/apis/api-client.js';
 import { getExtAPI } from '../utils/apis/ext-api.js';
+import { NavigationInterceptor } from './navigation-interceptor.js';
 
 console.log('SafeWaters background script loaded');
 
 // Inicializar API
 const extAPI = getExtAPI();
+
+// Detectar si estamos en modo desarrollo
+const isDev = extAPI.runtime.getManifest().version.includes('dev') || 
+              extAPI.runtime.getManifest().version === '1.0';
+
+// Inicializar interceptor de navegación
+const navigationInterceptor = new NavigationInterceptor(handleUrlCheck, isDev);
+console.log('SafeWaters: Navigation interceptor initialized');
 
 // Abrir página de bienvenida al instalar la extensión
 extAPI.runtime.onInstalled.addListener((details) => {
@@ -183,5 +192,24 @@ if (extAPI.runtime.getManifest().version.includes('dev')) {
             clearConfiguration().then(() => sendResponse({ success: true }));
             return true;
         }
+        
+        if (request.action === 'toggleNavigation') {
+            // Permitir activar/desactivar interceptor desde popup para debugging
+            if (navigationInterceptor.isEnabled()) {
+                navigationInterceptor.disable();
+            } else {
+                navigationInterceptor.enable();
+            }
+            sendResponse({ enabled: navigationInterceptor.isEnabled() });
+            return true;
+        }
+        
+        if (request.action === 'getNavigationStats') {
+            // Obtener estadísticas del interceptor
+            sendResponse(navigationInterceptor.getStats());
+            return true;
+        }
     });
 }
+
+console.log('SafeWaters: Background script fully initialized');
