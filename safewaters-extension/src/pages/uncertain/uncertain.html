@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeWaters - Sitio Incierto</title>
+    <link rel="stylesheet" href="uncertain.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span class="title">SafeWaters</span>
+        </div>
+        <div class="status-icon">
+            <img src="/icons/logo-naranja.svg" alt="Uncertain" class="uncertain-icon">
+        </div>
+        <h1>Sitio Incierto</h1>
+        <p class="message">No podemos verificar la seguridad de este sitio web. Procede con precaución.</p>
+        <div class="details">
+            <div class="detail-item">
+                <strong>Sitio web:</strong> 
+                <span id="uncertain-url" class="url-info">URL no disponible</span>
+            </div>
+            <div class="detail-item">
+                <strong>Motivo:</strong> 
+                <span id="uncertain-reason" class="reason-info">Información no disponible</span>
+            </div>
+            <div class="recommendation">
+                <strong>Recomendación:</strong> Verifica manualmente la legitimidad del sitio antes de continuar.
+            </div>
+            <div class="action-buttons">
+                <button id="proceed-button" class="proceed-button">Continuar de todas formas</button>
+                <button id="go-back-button" class="cancel-button">Cerrar ventana</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="uncertain.js"></script>
+</body>
+</html>
