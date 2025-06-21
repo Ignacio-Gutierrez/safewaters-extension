@@ -1,5 +1,5 @@
 # SafeWaters Extension
 
-Versión: **v0.5.0** (MVP)
+Versión: **v1.0.0**
 
-Esta extensión de navegador proporciona una capa de seguridad al navegar por internet. Su función principal es analizar las URLs antes de acceder a ellas, alertando al usuario sobre posibles sitios de phishing o contenido malicioso. Se integra con la API de SafeWaters para realizar estas verificaciones.
+Extensión de navegador completa para protección en tiempo real contra amenazas web. Versión estable lista para producción con interceptación avanzada de navegación, sistema de bypass inteligente, páginas de seguridad integradas, gestión segura de tokens y registro automático de historial de navegación.
