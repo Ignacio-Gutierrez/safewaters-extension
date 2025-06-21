@@ -7,7 +7,7 @@ export default defineConfig({
       input: {
         // Scripts principales
         background: resolve(__dirname, 'src/background/background.js'),
-        'content-simple': resolve(__dirname, 'src/content/content-simple.js'),
+        'content-script': resolve(__dirname, 'src/content/content-script.js'),
         
         // Páginas HTML
         popup: resolve(__dirname, 'src/popup/popup.html'),
@@ -31,7 +31,7 @@ export default defineConfig({
           // Mantener estructura de extensión
           const scriptMap = {
             'background': 'src/background/background.js',
-            'content-simple': 'src/content/content-simple.js',
+            'content-script': 'src/content/content-script.js',
             'popup-script': 'src/popup/popup.js',
             'welcome-script': 'src/pages/welcome/welcome.js',
             'blocked-script': 'src/pages/blocked/blocked.js',
