@@ -8,9 +8,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const source = urlParams.get('source');
     const returnUrl = urlParams.get('return_url');
+    const stepParam = urlParams.get('step');
+    const updateToken = urlParams.get('update_token');
+    
+    // Si se especifica un step en la URL, empezar desde ese step
+    if (stepParam) {
+        const requestedStep = parseInt(stepParam, 10);
+        if (requestedStep >= 1 && requestedStep <= totalSteps) {
+            currentStep = requestedStep;
+        }
+    }
     
     // Log para debugging
-    console.log('SafeWaters Welcome: Loaded with params', { source, returnUrl });
+    console.log('SafeWaters Welcome: Loaded with params', { 
+        source, 
+        returnUrl, 
+        stepParam, 
+        updateToken, 
+        currentStep 
+    });
     
     // Elementos del DOM
     const tokenInput = document.getElementById('profileToken');
@@ -49,6 +65,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Verificar si ya está configurado
     checkExistingConfiguration();
+    
+    // Si viene del popup para actualizar token, mostrar mensaje apropiado
+    if (source === 'popup' && updateToken === 'true') {
+        console.log('SafeWaters Welcome: Modo actualización de token activado');
+        showStatus('Ingresa tu nuevo token. El anterior se mantendrá hasta confirmar que el nuevo es válido.', 'info');
+    }
 
     async function validateToken() {
         const token = tokenInput.value.trim();
@@ -68,13 +90,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await apiValidateToken(token);
 
             if (result.valid) {
-                // Guardar solo el token de forma permanente
+                // Solo ahora que es válido, guardar el nuevo token (reemplazando el anterior)
                 await chrome.storage.local.set({
                     profileToken: token
                 });
-                console.log('SafeWaters: Token saved permanently');
+                console.log('SafeWaters: Nuevo token validado y guardado, reemplazando el anterior');
 
-                showStatus(`¡Éxito! Token validado correctamente - Continuando...`, 'success');
+                // Determinar mensaje según el contexto
+                const successMessage = (source === 'popup' && updateToken === 'true') 
+                    ? '¡Éxito! Token actualizado correctamente - Continuando...'
+                    : '¡Éxito! Token validado correctamente - Continuando...';
+                
+                showStatus(successMessage, 'success');
                 
                 // Actualizar información del perfil
                 profileInfo.textContent = `Token vinculado exitosamente`;
@@ -93,6 +120,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     errorMessage = `Token inválido: ${result.error}`;
                 }
                 
+                // Agregar mensaje sobre mantener token anterior si aplica
+                if (source === 'popup' && updateToken === 'true') {
+                    errorMessage += '. El token anterior se mantiene activo.';
+                }
+                
                 showStatus(errorMessage, 'error');
             }
 
@@ -107,28 +139,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function checkExistingConfiguration() {
         try {
-            // Verificar si se está abriendo para actualizar token
-            const urlParams = new URLSearchParams(window.location.search);
-            const isUpdating = urlParams.get('update') === 'true';
-            
             const result = await chrome.storage.local.get(['profileToken']);
             console.log('SafeWaters: Checking existing token');
             
-            if (result.profileToken && !isUpdating) {
-                // Ya tiene token y NO está actualizando, mostrar información y saltar al último paso
-                profileInfo.textContent = `Token ya configurado`;
-                
-                // Mostrar mensaje de éxito
-                showStatus('Token encontrado. Tu extensión ya está lista para usar.', 'success');
-                
-                goToStep(3);
-            } else {
-                if (isUpdating) {
-                    console.log('SafeWaters: Opening for token update');
-                    showStatus('Ingresa tu nuevo token para actualizar la configuración.', 'info');
+            if (result.profileToken) {
+                // Si está actualizando token, mostrar información pero no saltar al paso 3
+                if (source === 'popup' && updateToken === 'true') {
+                    console.log('SafeWaters: Opening for token update, current token exists');
+                    profileInfo.textContent = `Token actual configurado (será reemplazado al validar uno nuevo)`;
+                    showStatus('Tienes un token configurado. Ingresa el nuevo token para actualizarlo.', 'info');
+                    // Mantener en step 1 para permitir ingresar nuevo token
                 } else {
-                    console.log('SafeWaters: No existing token found');
+                    // Ya tiene token y NO está actualizando, mostrar información y saltar al último paso
+                    profileInfo.textContent = `Token ya configurado`;
+                    showStatus('Token encontrado. Tu extensión ya está lista para usar.', 'success');
+                    goToStep(3);
                 }
+            } else {
+                console.log('SafeWaters: No existing token found');
+                showStatus('Configura tu token para comenzar a usar SafeWaters.', 'info');
             }
         } catch (error) {
             console.error('Error checking configuration:', error);
@@ -234,8 +263,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Inicializar con el primer paso
-    goToStep(1);
+    // Inicializar con el paso correcto (desde URL o por defecto step 1)
+    goToStep(currentStep);
 });
 
 // Función para manejar errores de extensión

@@ -54,6 +54,10 @@ class SafeWatersOrchestrator {
                 case 'approveNavigation':
                     this.handleNavigationApproval(request, sender, sendResponse);
                     return true;
+                
+                case 'openWelcomePage':
+                    this.handleOpenWelcomePage(request, sender, sendResponse);
+                    return true;
                     
                 case 'getConfig':
                     sendResponse({ success: true, config: CONFIG });
@@ -180,6 +184,44 @@ class SafeWatersOrchestrator {
         } catch (error) {
             Logger.error('Error procesando aprobación de navegación', { error: error.message });
             sendResponse({ success: false, error: error.message });
+        }
+    }
+
+    async handleOpenWelcomePage(request, sender, sendResponse) {
+        try {
+            Logger.info('Solicitud para abrir página de bienvenida', { 
+                updateToken: request.updateToken,
+                sender: sender.tab?.id 
+            });
+            
+            // Crear nueva pestaña con la página de bienvenida
+            const welcomeUrl = chrome.runtime.getURL('src/pages/welcome/welcome.html');
+            
+            // Si es para actualizar token, siempre empezar desde step 1
+            const queryParams = request.updateToken ? '?source=popup&update_token=true&step=1' : '';
+            const fullUrl = welcomeUrl + queryParams;
+            
+            const tab = await chrome.tabs.create({ url: fullUrl });
+            
+            Logger.info('Página de bienvenida abierta', { 
+                tabId: tab.id, 
+                url: fullUrl,
+                updateToken: request.updateToken,
+                startFromStep1: request.updateToken 
+            });
+            
+            sendResponse({ 
+                success: true, 
+                message: 'Página de bienvenida abierta correctamente',
+                tabId: tab.id 
+            });
+            
+        } catch (error) {
+            Logger.error('Error abriendo página de bienvenida', { error: error.message });
+            sendResponse({ 
+                success: false, 
+                error: error.message 
+            });
         }
     }
     
