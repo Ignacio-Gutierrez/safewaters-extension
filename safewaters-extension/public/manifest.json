@@ -52,8 +52,13 @@
                 "src/pages/welcome/welcome.css",
                 "src/pages/blocked/blocked.html",
                 "src/pages/blocked/blocked.css",
+                "src/pages/blocked/blocked.js",
                 "src/pages/warning/warning.html",
-                "src/pages/warning/warning.css"
+                "src/pages/warning/warning.css",
+                "src/pages/warning/warning.js",
+                "src/pages/uncertain/uncertain.html",
+                "src/pages/uncertain/uncertain.css",
+                "src/pages/uncertain/uncertain.js"
             ],
             "matches": [ "<all_urls>" ]
         }

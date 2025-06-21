@@ -9,6 +9,10 @@ export default defineConfig({
         background: resolve(__dirname, 'src/background/background.js'),
         'content-script': resolve(__dirname, 'src/content/content-script.js'),
         
+        // Interceptores
+        'click-interceptor': resolve(__dirname, 'src/background/interceptors/click-interceptor.js'),
+        'navigation-interceptor': resolve(__dirname, 'src/background/interceptors/navigation-interceptor.js'),
+        
         // Páginas HTML
         popup: resolve(__dirname, 'src/popup/popup.html'),
         welcome: resolve(__dirname, 'src/pages/welcome/welcome.html'),
