@@ -22,9 +22,24 @@ export function getExtAPI() {
             runtime: chrome.runtime,
             tabs: chrome.tabs,
             webNavigation: chrome.webNavigation,
-            scripting: chrome.scripting
+            scripting: chrome.scripting,
+            // Utilidad de comunicación centralizada
+            messaging: {
+                sendMessage: (message) => {
+                    return new Promise((resolve, reject) => {
+                        chrome.runtime.sendMessage(message, (response) => {
+                            if (chrome.runtime.lastError) {
+                                reject(chrome.runtime.lastError);
+                            } else {
+                                resolve(response);
+                            }
+                        });
+                    });
+                },
+                onMessage: chrome.runtime.onMessage
+            }
         };
         return api;
     }
     throw new Error("No se encontró una API de almacenamiento compatible.");
-  }
+}

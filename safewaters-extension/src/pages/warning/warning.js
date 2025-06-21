@@ -30,12 +30,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const goBackButton = document.getElementById('go-back-button');
     
     if (proceedButton) {
-        proceedButton.addEventListener('click', function() {
-            // Permitir navegación a la URL original
-            const originalUrl = decodeURIComponent(warningUrl);
-            if (originalUrl && originalUrl !== 'URL no disponible') {
-                window.location.href = originalUrl;
-            }
+        proceedButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('SafeWaters: User chose to bypass warning for URL:', warningUrl);
+            
+            // Enviar mensaje al background script para continuar
+            chrome.runtime.sendMessage({
+                action: 'continueAnyway',
+                url: decodeURIComponent(warningUrl)
+            }, (response) => {
+                if (response && response.success) {
+                    console.log('SafeWaters: Successfully bypassed warning');
+                } else {
+                    console.error('SafeWaters: Failed to bypass warning:', response?.error);
+                    // Fallback: intentar navegación directa
+                    const originalUrl = decodeURIComponent(warningUrl);
+                    if (originalUrl && originalUrl !== 'URL no disponible') {
+                        window.location.href = originalUrl;
+                    }
+                }
+            });
         });
     }
     

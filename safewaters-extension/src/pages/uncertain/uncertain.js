@@ -30,12 +30,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const goBackButton = document.getElementById('go-back-button');
     
     if (proceedButton) {
-        proceedButton.addEventListener('click', function() {
-            // Permitir navegación a la URL original
-            const originalUrl = decodeURIComponent(uncertainUrl);
-            if (originalUrl && originalUrl !== 'URL no disponible') {
-                window.location.href = originalUrl;
-            }
+        proceedButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('SafeWaters: User chose to bypass uncertain URL:', uncertainUrl);
+            
+            // Enviar mensaje al background script para continuar
+            chrome.runtime.sendMessage({
+                action: 'continueAnyway',
+                url: decodeURIComponent(uncertainUrl)
+            }, (response) => {
+                if (response && response.success) {
+                    console.log('SafeWaters: Successfully bypassed uncertain URL');
+                } else {
+                    console.error('SafeWaters: Failed to bypass uncertain URL:', response?.error);
+                    // Fallback: intentar navegación directa
+                    const originalUrl = decodeURIComponent(uncertainUrl);
+                    if (originalUrl && originalUrl !== 'URL no disponible') {
+                        window.location.href = originalUrl;
+                    }
+                }
+            });
         });
     }
     

@@ -1,215 +1,157 @@
-// SafeWaters Extension Background Script
-import { validateToken, testUrl } from '../utils/apis/api-client.js';
-import { getExtAPI } from '../utils/apis/ext-api.js';
-import { NavigationInterceptor } from './navigation-interceptor.js';
+// SafeWaters Background Script - Orquestador Principal
+import { Logger, CONFIG } from '../utils/config.js';
+import { ClickInterceptor } from './interceptors/click-interceptor.js';
 
-console.log('SafeWaters background script loaded');
+Logger.info('SafeWaters Background Script iniciado');
 
-// Inicializar API
-const extAPI = getExtAPI();
-
-// Detectar si estamos en modo desarrollo
-const isDev = extAPI.runtime.getManifest().version.includes('dev') || 
-              extAPI.runtime.getManifest().version === '1.0';
-
-// Inicializar interceptor de navegación
-const navigationInterceptor = new NavigationInterceptor(handleUrlCheck, isDev);
-console.log('SafeWaters: Navigation interceptor initialized');
-
-// Abrir página de bienvenida al instalar la extensión
-extAPI.runtime.onInstalled.addListener((details) => {
-    console.log('Extension installed/updated:', details.reason);
-    
-    if (details.reason === 'install') {
-        // Primera instalación - abrir página de bienvenida
-        extAPI.tabs.create({
-            url: extAPI.runtime.getURL('src/pages/welcome/welcome.html')
-        });
-    } else if (details.reason === 'update') {
-        // Actualización - verificar si necesita reconfiguración
-        checkConfigurationAfterUpdate();
-    }
-});
-
-// Verificar configuración después de una actualización
-async function checkConfigurationAfterUpdate() {
-    try {
-        const result = await extAPI.storage.get(['profileToken']);
-        console.log('SafeWaters: Checking stored token');
+class SafeWatersOrchestrator {
+    constructor() {
+        this.interceptors = {
+            click: new ClickInterceptor()
+            // navigation: new NavigationInterceptor(), // TODO: implementar después
+            // contextMenu: new ContextMenuInterceptor() // TODO: implementar después
+        };
         
-        if (!result.profileToken) {
-            // Si no tiene token, abrir página de bienvenida
-            console.log('SafeWaters: No token found, opening welcome page');
-            extAPI.tabs.create({
-                url: extAPI.runtime.getURL('src/pages/welcome/welcome.html')
-            });
-        } else {
-            // Token encontrado - mantener funcionando
-            console.log('SafeWaters: Token found and persistent');
+        this.stats = {
+            clicksProcessed: 0,
+            navigationsProcessed: 0,
+            contextMenusProcessed: 0
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        Logger.info('Inicializando orquestador SafeWaters');
+        
+        // Configurar event listeners
+        this.setupMessageListener();
+        this.setupInstallListener();
+        this.setupCleanupTimer();
+        
+        // Inicializar interceptores (solo clicks por ahora)
+        // this.interceptors.navigation.init(); // TODO: cuando se implemente
+        // this.interceptors.contextMenu.init(); // TODO: cuando se implemente
+        
+        Logger.info('Orquestador SafeWaters inicializado correctamente');
+    }
+    
+    setupMessageListener() {
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            Logger.debug('Mensaje recibido', { action: request.action, sender: sender.tab?.id });
             
-            // Solo validar si hay conectividad - no forzar si no hay API
-            validateStoredToken(result.profileToken);
-        }
-    } catch (error) {
-        console.error('Error checking configuration after update:', error);
-    }
-}
-
-// Validar token almacenado usando el api-client
-async function validateStoredToken(token) {
-    console.log('Validating stored token...');
-    
-    const result = await validateToken(token);
-    
-    if (result.errorType === 'API_UNAVAILABLE') {
-        // API no disponible - mantener configuración existente
-        console.log('API not available - keeping existing configuration');
-        return;
-    }
-    
-    if (!result.valid) {
-        console.log('Stored token is invalid, clearing configuration');
-        // Token inválido - limpiar configuración y abrir bienvenida
-        await extAPI.storage.remove(['profileToken']);
-        extAPI.tabs.create({
-            url: extAPI.runtime.getURL('src/pages/welcome/welcome.html')
-        });
-    } else {
-        console.log('Stored token is valid');
-    }
-}
-
-// Manejar mensajes de los content scripts
-extAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'checkConfiguration') {
-        checkConfiguration().then(sendResponse);
-        return true; // Indica que la respuesta será asíncrona
-    }
-    
-    if (request.action === 'validateToken') {
-        validateToken(request.token).then(sendResponse);
-        return true;
-    }
-    
-    if (request.action === 'openWelcomePage') {
-        let welcomeUrl = extAPI.runtime.getURL('src/pages/welcome/welcome.html');
-        
-        // Si se solicita actualizar token, agregar parámetro
-        if (request.updateToken) {
-            welcomeUrl += '?update=true';
-        }
-        
-        extAPI.tabs.create({
-            url: welcomeUrl
-        });
-        sendResponse({ success: true });
-    }
-});
-
-// Agregar listener para mensajes del content script
-extAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('SafeWaters: Background received message:', message);
-    
-    if (message.action === 'checkUrl') {
-        handleUrlCheck(message.url)
-            .then(result => {
-                console.log('SafeWaters: URL check result:', result);
-                sendResponse({ success: true, data: result });
-            })
-            .catch(error => {
-                console.error('SafeWaters: URL check error:', error);
-                sendResponse({ success: false, error: error.message });
-            });
-        
-        // Devolver true para indicar respuesta asíncrona
-        return true;
-    }
-});
-
-// Manejar verificación de URL
-async function handleUrlCheck(url) {
-    try {
-        // Obtener token del storage
-        const result = await extAPI.storage.get(['profileToken']);
-        
-        if (!result.profileToken) {
-            console.log('SafeWaters: No token found, opening welcome page');
-            // Abrir página de configuración automáticamente
-            extAPI.tabs.create({
-                url: extAPI.runtime.getURL('src/pages/welcome/welcome.html')
-            });
-            // Retornar estado especial en lugar de lanzar error
-            return {
-                needsConfiguration: true,
-                message: 'Token no encontrado - Abriendo página de configuración'
-            };
-        }
-
-        // Usar testUrl del api-client para verificar la URL
-        const apiResult = await testUrl(url, result.profileToken);
-        
-        return apiResult;
-    } catch (error) {
-        console.error('SafeWaters: Error checking URL in background:', error);
-        throw error;
-    }
-}
-
-// Función para verificar configuración (usada por content scripts)
-async function checkConfiguration() {
-    try {
-        const result = await extAPI.storage.get(['profileToken']);
-        
-        const hasToken = !!(result.profileToken);
-        
-        return {
-            configured: hasToken,
-            hasToken: hasToken
-        };
-    } catch (error) {
-        console.error('Error checking configuration:', error);
-        return {
-            configured: false,
-            hasToken: false
-        };
-    }
-}
-
-// Limpiar configuración (función de utilidad)
-async function clearConfiguration() {
-    try {
-        await extAPI.storage.remove(['profileToken']);
-        console.log('Token cleared');
-    } catch (error) {
-        console.error('Error clearing token:', error);
-    }
-}
-
-// Exponer función para debugging (solo en development)
-if (extAPI.runtime.getManifest().version.includes('dev')) {
-    extAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === 'clearConfiguration') {
-            clearConfiguration().then(() => sendResponse({ success: true }));
-            return true;
-        }
-        
-        if (request.action === 'toggleNavigation') {
-            // Permitir activar/desactivar interceptor desde popup para debugging
-            if (navigationInterceptor.isEnabled()) {
-                navigationInterceptor.disable();
-            } else {
-                navigationInterceptor.enable();
+            // Manejar diferentes tipos de mensajes
+            switch (request.action) {
+                case 'checkClickUrl':
+                    this.handleClickCheck(request, sender, sendResponse);
+                    return true; // Mantener canal abierto
+                    
+                case 'popupResponse':
+                    this.handlePopupResponse(request, sender, sendResponse);
+                    return true;
+                    
+                case 'getConfig':
+                    sendResponse({ success: true, config: CONFIG });
+                    break;
+                    
+                case 'getStats':
+                    sendResponse({ success: true, stats: this.getStats() });
+                    break;
+                    
+                default:
+                    Logger.warn('Acción desconocida', { action: request.action });
+                    sendResponse({ success: false, error: 'Acción desconocida' });
             }
-            sendResponse({ enabled: navigationInterceptor.isEnabled() });
-            return true;
+        });
+    }
+    
+    setupInstallListener() {
+        chrome.runtime.onInstalled.addListener((details) => {
+            Logger.info('Extensión instalada/actualizada', details);
+            
+            if (details.reason === 'install') {
+                // Primera instalación - mostrar página de bienvenida
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL('src/pages/welcome/welcome.html')
+                });
+                Logger.info('Página de bienvenida abierta para nueva instalación');
+            }
+        });
+    }
+    
+    setupCleanupTimer() {
+        // Limpiar datos antiguos cada 2 minutos
+        setInterval(() => {
+            try {
+                Object.values(this.interceptors).forEach(interceptor => {
+                    if (interceptor.cleanup) {
+                        interceptor.cleanup();
+                    }
+                });
+                Logger.debug('Limpieza periódica completada');
+            } catch (error) {
+                Logger.error('Error en limpieza periódica', { error: error.message });
+            }
+        }, CONFIG.timeouts.cleanupInterval);
+    }
+    
+    async handleClickCheck(request, sender, sendResponse) {
+        try {
+            this.stats.clicksProcessed++;
+            
+            const result = await this.interceptors.click.handleClick({
+                url: request.url,
+                tabId: sender.tab.id
+            });
+            
+            Logger.info('Click procesado', { url: request.url, result });
+            sendResponse({ success: true, result });
+            
+        } catch (error) {
+            Logger.error('Error procesando click', { url: request.url, error: error.message });
+            sendResponse({ 
+                success: false, 
+                error: error.message,
+                fallback: { action: 'allow' } // Permitir navegación como fallback
+            });
         }
-        
-        if (request.action === 'getNavigationStats') {
-            // Obtener estadísticas del interceptor
-            sendResponse(navigationInterceptor.getStats());
-            return true;
+    }
+    
+    async handlePopupResponse(request, sender, sendResponse) {
+        try {
+            await this.interceptors.click.handlePopupResponse({
+                popupId: request.popupId,
+                action: request.userAction,
+                url: request.url,
+                tabId: sender.tab.id
+            });
+            
+            Logger.info('Respuesta de popup procesada', request);
+            sendResponse({ success: true });
+            
+        } catch (error) {
+            Logger.error('Error procesando respuesta de popup', { error: error.message });
+            sendResponse({ success: false, error: error.message });
         }
-    });
+    }
+    
+    getStats() {
+        return {
+            ...this.stats,
+            interceptors: Object.fromEntries(
+                Object.entries(this.interceptors).map(([key, interceptor]) => [
+                    key, 
+                    interceptor.getStats ? interceptor.getStats() : { active: 'unknown' }
+                ])
+            )
+        };
+    }
 }
 
-console.log('SafeWaters: Background script fully initialized');
+// Inicializar orquestador
+const orchestrator = new SafeWatersOrchestrator();
+
+// Exportar para testing si es necesario
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = orchestrator;
+}
