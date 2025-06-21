@@ -1,21 +1,18 @@
-import { getExtAPI } from "../utils/apis/ext-api.js";
-
+// SafeWaters Popup Script
 // Elementos del DOM
 const statusElement = document.getElementById('status');
 const updateTokenBtn = document.getElementById("updateTokenBtn");
 
-// API de extensión
-const extAPI = getExtAPI();
-
-if (extAPI && extAPI.storage && extAPI.runtime) {
+// Verificar que las APIs de Chrome estén disponibles
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.storage) {
   // Manejar clic del botón actualizar token
   updateTokenBtn.addEventListener("click", function() {
-    extAPI.runtime.sendMessage({ 
+    chrome.runtime.sendMessage({ 
       action: 'openWelcomePage', 
       updateToken: true 
     }, (response) => {
-      if (extAPI.runtime.lastError) {
-        console.error('Error opening welcome page:', extAPI.runtime.lastError);
+      if (chrome.runtime.lastError) {
+        console.error('Error opening welcome page:', chrome.runtime.lastError);
       } else if (response && response.success) {
         console.log('Welcome page opened for token update');
         window.close();
@@ -32,5 +29,5 @@ if (extAPI && extAPI.storage && extAPI.runtime) {
   updateTokenBtn.disabled = true;
   statusElement.innerHTML = '<img src="../../assets/compass_off.svg" alt="compass"> Sin coordenadas';
   statusElement.style.color = 'orange';
-  console.error("SafeWaters Popup: Extension APIs not available, popup functionality disabled.");
+  console.error("SafeWaters Popup: Chrome Extension APIs not available, popup functionality disabled.");
 }

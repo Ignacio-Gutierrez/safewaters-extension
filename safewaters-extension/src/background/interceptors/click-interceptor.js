@@ -1,7 +1,6 @@
 // SafeWaters Click Interceptor - Maneja clicks en enlaces y decide si mostrar popups
 import { Logger, CONFIG, Validator } from '../../utils/config.js';
 import { testUrl } from '../../utils/apis/api-client.js';
-import { getExtAPI } from '../../utils/apis/ext-api.js';
 import { PopupHandler } from '../handlers/popup-handler.js';
 
 export class ClickInterceptor {
@@ -197,8 +196,7 @@ export class ClickInterceptor {
 
     async getStoredToken() {
         try {
-            const extAPI = getExtAPI();
-            const result = await extAPI.storage.get(['profileToken']);
+            const result = await chrome.storage.local.get(['profileToken']);
             return result.profileToken;
         } catch (error) {
             Logger.error('Error obteniendo token', { error: error.message });

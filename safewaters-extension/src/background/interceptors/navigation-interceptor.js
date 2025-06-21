@@ -1,7 +1,6 @@
 // SafeWaters Navigation Interceptor - Intercepta navegación directa desde barra de direcciones
 import { Logger, CONFIG, Validator } from '../../utils/config.js';
 import { testUrl } from '../../utils/apis/api-client.js';
-import { getExtAPI } from '../../utils/apis/ext-api.js';
 
 export class NavigationInterceptor {
     constructor() {
@@ -408,8 +407,7 @@ export class NavigationInterceptor {
 
     async getStoredToken() {
         try {
-            const extAPI = getExtAPI();
-            const result = await extAPI.storage.get(['profileToken']);
+            const result = await chrome.storage.local.get(['profileToken']);
             return result.profileToken;
         } catch (error) {
             Logger.error('Error obteniendo token para navegación', { error: error.message });

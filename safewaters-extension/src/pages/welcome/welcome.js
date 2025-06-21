@@ -4,6 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStep = 1;
     const totalSteps = 3;
     
+    // Obtener parámetros de la URL para detectar si viene de navegación
+    const urlParams = new URLSearchParams(window.location.search);
+    const source = urlParams.get('source');
+    const returnUrl = urlParams.get('return_url');
+    
+    // Log para debugging
+    console.log('SafeWaters Welcome: Loaded with params', { source, returnUrl });
+    
     // Elementos del DOM
     const tokenInput = document.getElementById('profileToken');
     const validateButton = document.getElementById('validateToken');
@@ -194,8 +202,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const savedConfig = await chrome.storage.local.get(['profileToken']);
             
             if (savedConfig.profileToken) {
-                showStatus('✅ Token guardado permanentemente en Chrome. ¡SafeWaters está listo! - Cerrando...', 'success');
+                showStatus('✅ Token guardado permanentemente en Chrome. ¡SafeWaters está listo!', 'success');
                 console.log('SafeWaters: Token verified and saved permanently');
+                
+                // Si viene de navegación y hay URL de retorno, redirigir
+                if (source === 'navigation' && returnUrl) {
+                    const originalUrl = decodeURIComponent(returnUrl);
+                    console.log('SafeWaters: Redirecting to original URL after configuration:', originalUrl);
+                    
+                    showStatus('✅ Configuración completa. Redirigiendo al sitio solicitado...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = originalUrl;
+                    }, 1000);
+                    return;
+                }
+                
+                // Comportamiento normal - cerrar la ventana
+                setTimeout(() => {
+                    window.close();
+                }, 300);
+                
             } else {
                 showStatus('⚠️ Error: El token no se guardó correctamente. Por favor, intenta nuevamente.', 'error');
                 return;
@@ -205,11 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showStatus('Error verificando el token guardado.', 'error');
             return;
         }
-        
-        // Cerrar la ventana de configuración más rápido
-        setTimeout(() => {
-            window.close();
-        }, 300);
     }
 
     // Inicializar con el primer paso
