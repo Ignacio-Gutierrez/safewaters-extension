@@ -167,29 +167,32 @@ export class ClickInterceptor {
         
         if (!popupInfo) {
             Logger.warn('Información de popup no encontrada', { popupId });
-            return;
+            return null;
         }
 
         // Procesar acción del usuario
         switch (action) {
             case 'proceed':
-                Logger.info('Usuario eligió proceder', { url });
-                // La navegación se maneja desde el popup mismo
+                Logger.info('Usuario eligió proceder', { url: popupInfo.url });
+                // La navegación se maneja desde el background script
                 break;
                 
             case 'cancel':
-                Logger.info('Usuario canceló navegación', { url });
+                Logger.info('Usuario canceló navegación', { url: popupInfo.url });
                 // No hacer nada, mantener en la página actual
                 break;
                 
             case 'understood':
-                Logger.info('Usuario entendió el bloqueo', { url });
+                Logger.info('Usuario entendió el bloqueo', { url: popupInfo.url });
                 // No hacer nada para URLs bloqueadas
                 break;
                 
             default:
                 Logger.warn('Acción desconocida', { action });
         }
+        
+        // Retornar la información del popup para que el background script pueda usarla
+        return popupInfo;
     }
 
     async getStoredToken() {

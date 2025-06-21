@@ -1,14 +1,15 @@
 // SafeWaters Background Script - Orquestador Principal
 import { Logger, CONFIG } from '../utils/config.js';
 import { ClickInterceptor } from './interceptors/click-interceptor.js';
+import { NavigationInterceptor } from './interceptors/navigation-interceptor.js';
 
 Logger.info('SafeWaters Background Script iniciado');
 
 class SafeWatersOrchestrator {
     constructor() {
         this.interceptors = {
-            click: new ClickInterceptor()
-            // navigation: new NavigationInterceptor(), // TODO: implementar después
+            click: new ClickInterceptor(),
+            navigation: new NavigationInterceptor()
             // contextMenu: new ContextMenuInterceptor() // TODO: implementar después
         };
         
@@ -29,8 +30,8 @@ class SafeWatersOrchestrator {
         this.setupInstallListener();
         this.setupCleanupTimer();
         
-        // Inicializar interceptores (solo clicks por ahora)
-        // this.interceptors.navigation.init(); // TODO: cuando se implemente
+        // Inicializar interceptores
+        this.interceptors.navigation.init();
         // this.interceptors.contextMenu.init(); // TODO: cuando se implemente
         
         Logger.info('Orquestador SafeWaters inicializado correctamente');
@@ -48,6 +49,10 @@ class SafeWatersOrchestrator {
                     
                 case 'popupResponse':
                     this.handlePopupResponse(request, sender, sendResponse);
+                    return true;
+                
+                case 'approveNavigation':
+                    this.handleNavigationApproval(request, sender, sendResponse);
                     return true;
                     
                 case 'getConfig':
@@ -119,18 +124,61 @@ class SafeWatersOrchestrator {
     
     async handlePopupResponse(request, sender, sendResponse) {
         try {
-            await this.interceptors.click.handlePopupResponse({
+            const popupInfo = await this.interceptors.click.handlePopupResponse({
                 popupId: request.popupId,
                 action: request.userAction,
                 url: request.url,
                 tabId: sender.tab.id
             });
             
+            // Si el usuario eligió proceder, pre-aprobar la URL en el navigation interceptor
+            if (request.userAction === 'proceed' && popupInfo && popupInfo.url) {
+                Logger.info('Usuario eligió proceder desde popup, pre-aprobando URL', { 
+                    url: popupInfo.url, 
+                    tabId: sender.tab.id 
+                });
+                
+                // Pre-aprobar la URL para evitar que el navigation interceptor la bloquee
+                this.interceptors.navigation.approveUserNavigation(popupInfo.url);
+                
+                // Ahora navegar a la URL
+                await chrome.tabs.update(sender.tab.id, { url: popupInfo.url });
+                Logger.info('Navegación ejecutada después de aprobación de popup', { url: popupInfo.url });
+            }
+            
             Logger.info('Respuesta de popup procesada', request);
             sendResponse({ success: true });
             
         } catch (error) {
             Logger.error('Error procesando respuesta de popup', { error: error.message });
+            sendResponse({ success: false, error: error.message });
+        }
+    }
+
+    async handleNavigationApproval(request, sender, sendResponse) {
+        try {
+            const { url } = request;
+            
+            if (!url) {
+                throw new Error('URL requerida para aprobación de navegación');
+            }
+            
+            // Aprobar la navegación en el interceptor
+            const approved = this.interceptors.navigation.approveUserNavigation(url);
+            
+            if (approved) {
+                Logger.info('Navegación aprobada por usuario', { url, tabId: sender.tab.id });
+                
+                // Navegar directamente a la URL
+                await chrome.tabs.update(sender.tab.id, { url: url });
+                
+                sendResponse({ success: true, message: 'Navegación aprobada y ejecutada' });
+            } else {
+                throw new Error('Error aprobando navegación');
+            }
+            
+        } catch (error) {
+            Logger.error('Error procesando aprobación de navegación', { error: error.message });
             sendResponse({ success: false, error: error.message });
         }
     }

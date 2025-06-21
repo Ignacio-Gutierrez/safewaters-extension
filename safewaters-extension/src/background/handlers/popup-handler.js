@@ -142,15 +142,8 @@ export class PopupHandler {
                                     popup.style.display = 'none';
                                 }
                                 
-                                // Si el usuario eligió proceder, navegar a la URL
-                                if (action === 'proceed') {
-                                    // Obtener la URL desde el popupId o desde un data attribute
-                                    var targetUrl = popup.getAttribute('data-url');
-                                    if (targetUrl) {
-                                        console.log('SafeWaters: Usuario eligió proceder, navegando a:', targetUrl);
-                                        window.location.href = targetUrl;
-                                    }
-                                }
+                                // La navegación ahora se maneja desde el background script
+                                // No necesitamos window.location.href aquí
                             });
                         }
                     };

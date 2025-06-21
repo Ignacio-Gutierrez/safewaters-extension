@@ -1,9 +1,34 @@
 // SafeWaters - Uncertain Page Script
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('SafeWaters Uncertain: Page loaded');
+    
     // Obtener parámetros de la URL
     const urlParams = new URLSearchParams(window.location.search);
     const uncertainUrl = urlParams.get('url') || 'URL no disponible';
     const uncertainReason = urlParams.get('reason') || 'Unable to verify site security';
+    
+    console.log('SafeWaters Uncertain: URL params:', {
+        rawUrl: uncertainUrl,
+        decodedUrl: uncertainUrl !== 'URL no disponible' ? decodeURIComponent(uncertainUrl) : 'N/A',
+        reason: uncertainReason,
+        currentPageUrl: window.location.href,
+        allParams: Object.fromEntries(urlParams.entries())
+    });
+    
+    // Debugging extra
+    console.log('SafeWaters Uncertain: Raw URL value:', JSON.stringify(uncertainUrl));
+    console.log('SafeWaters Uncertain: Is URL available?', uncertainUrl !== 'URL no disponible' && uncertainUrl !== null);
+    
+    if (uncertainUrl && uncertainUrl !== 'URL no disponible') {
+        try {
+            const decoded = decodeURIComponent(uncertainUrl);
+            console.log('SafeWaters Uncertain: Successfully decoded URL:', decoded);
+            const testUrl = new URL(decoded);
+            console.log('SafeWaters Uncertain: URL validation test passed:', testUrl.href);
+        } catch (e) {
+            console.error('SafeWaters Uncertain: URL test failed:', e);
+        }
+    }
     
     // Mostrar información
     const urlElement = document.getElementById('uncertain-url');
@@ -32,25 +57,61 @@ document.addEventListener('DOMContentLoaded', function() {
     if (proceedButton) {
         proceedButton.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('SafeWaters: User chose to bypass uncertain URL:', uncertainUrl);
+            console.log('SafeWaters Uncertain: Proceed button clicked');
             
-            // Enviar mensaje al background script para continuar
-            chrome.runtime.sendMessage({
-                action: 'continueAnyway',
-                url: decodeURIComponent(uncertainUrl)
-            }, (response) => {
-                if (response && response.success) {
-                    console.log('SafeWaters: Successfully bypassed uncertain URL');
-                } else {
-                    console.error('SafeWaters: Failed to bypass uncertain URL:', response?.error);
-                    // Fallback: intentar navegación directa
-                    const originalUrl = decodeURIComponent(uncertainUrl);
-                    if (originalUrl && originalUrl !== 'URL no disponible') {
-                        window.location.href = originalUrl;
-                    }
+            const originalUrl = decodeURIComponent(uncertainUrl);
+            console.log('SafeWaters Uncertain: Attempting to approve navigation to:', originalUrl);
+            
+            if (originalUrl && originalUrl !== 'URL no disponible') {
+                try {
+                    // Validar que la URL es válida
+                    const urlObj = new URL(originalUrl);
+                    console.log('SafeWaters Uncertain: URL validation successful for:', urlObj.href);
+                    
+                    // Deshabilitar botón mientras se procesa
+                    proceedButton.disabled = true;
+                    proceedButton.textContent = 'Procesando...';
+                    
+                    // Solicitar al background script que apruebe la navegación
+                    chrome.runtime.sendMessage({
+                        action: 'approveNavigation',
+                        url: originalUrl
+                    }, function(response) {
+                        if (response && response.success) {
+                            console.log('SafeWaters Uncertain: Navigation approved successfully');
+                            // La navegación ya se ejecutó desde el background script
+                        } else {
+                            console.error('SafeWaters Uncertain: Failed to approve navigation:', response);
+                            
+                            // Fallback: intentar navegación directa
+                            console.log('SafeWaters Uncertain: Attempting direct navigation as fallback');
+                            window.location.href = originalUrl;
+                            
+                            // Re-habilitar botón
+                            proceedButton.disabled = false;
+                            proceedButton.textContent = 'Continue anyway';
+                        }
+                        
+                        if (chrome.runtime.lastError) {
+                            console.error('SafeWaters Uncertain: Chrome runtime error:', chrome.runtime.lastError);
+                        }
+                    });
+                    
+                } catch (urlError) {
+                    console.error('SafeWaters Uncertain: Invalid URL for navigation:', originalUrl, urlError);
+                    alert('Error: URL no válida. No se puede continuar.\nURL: ' + originalUrl + '\nError: ' + urlError.message);
+                    
+                    // Re-habilitar botón
+                    proceedButton.disabled = false;
+                    proceedButton.textContent = 'Continue anyway';
                 }
-            });
+            } else {
+                console.error('SafeWaters Uncertain: Cannot navigate - URL not available or invalid');
+                alert('Error: No se puede continuar - URL no disponible');
+            }
         });
+    } else {
+        console.error('SafeWaters Uncertain: Proceed button not found!');
     }
     
     if (goBackButton) {

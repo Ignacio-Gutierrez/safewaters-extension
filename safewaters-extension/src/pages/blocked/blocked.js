@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const blockedUrl = urlParams.get('url') || 'URL no disponible';
     const blockedReason = urlParams.get('reason') || 'Blocked by security rules';
+    const source = urlParams.get('source') || 'click';
     
     // Mostrar información
     const urlElement = document.getElementById('blocked-url');
@@ -24,4 +25,11 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (e) {
         document.title = 'SafeWaters - Acceso Bloqueado';
     }
+    
+    // Log para debugging
+    console.log('SafeWaters: Blocked page loaded', {
+        url: blockedUrl,
+        reason: blockedReason,
+        source: source
+    });
 });
