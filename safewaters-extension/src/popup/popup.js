@@ -14,7 +14,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.storage) {
       if (chrome.runtime.lastError) {
         console.error('Error opening welcome page:', chrome.runtime.lastError);
       } else if (response && response.success) {
-        console.log('Welcome page opened for token update');
+        // console.log('Welcome page opened for token update'); // DEBUG: Comentado para producción
         window.close();
       }
     });
@@ -22,7 +22,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.storage) {
 
   // Configurar estado visual (siempre activo)
   statusElement.style.color = 'green';
-  console.log('SafeWaters: Popup initialized - Extension always active');
+  // console.log('SafeWaters: Popup initialized - Extension always active'); // DEBUG: Comentado para producción
 
 } else {
   // Deshabilitar funcionalidad si las APIs no están disponibles

@@ -47,12 +47,12 @@ export class PopupHandler {
                 target: { tabId: tabId },
                 func: function() {
                     // Función que se ejecuta en el contexto de la página - sin sintaxis moderna
-                    console.log('SafeWaters: Iniciando inyección de HTML de popup');
+                    // console.log('SafeWaters: Iniciando inyección de HTML de popup'); // DEBUG: Comentado para producción
                     
                     if (document.getElementById('safewaters-confirmation-popup-container-malicious') || 
                         document.getElementById('safewaters-confirmation-popup-container-uncertain') ||
                         document.getElementById('safewaters-confirmation-popup-container-blocked')) {
-                        console.log('SafeWaters: HTML ya inyectado, omitiendo');
+                        // console.log('SafeWaters: HTML ya inyectado, omitiendo'); // DEBUG: Comentado para producción
                         return;
                     }
 
@@ -108,11 +108,11 @@ export class PopupHandler {
 
                     document.body.insertAdjacentHTML('beforeend', html);
                     
-                    console.log('SafeWaters: HTML de popup inyectado exitosamente');
+                    // console.log('SafeWaters: HTML de popup inyectado exitosamente'); // DEBUG: Comentado para producción
 
                     // Configurar función global para listeners
                     window.safeWatersSetupPopupListeners = function(popupId) {
-                        console.log('SafeWaters: Configurando listeners para popup:', popupId);
+                        // console.log('SafeWaters: Configurando listeners para popup:', popupId); // DEBUG: Comentado para producción
                         var buttons = document.querySelectorAll('[data-action]');
                         
                         // Remover listeners previos
@@ -127,7 +127,7 @@ export class PopupHandler {
                             var btn = newButtons[j];
                             btn.addEventListener('click', function(e) {
                                 var action = e.target.getAttribute('data-action');
-                                console.log('SafeWaters: Botón clickeado:', action);
+                                // console.log('SafeWaters: Botón clickeado:', action); // DEBUG: Comentado para producción
                                 
                                 // Enviar respuesta al background script
                                 chrome.runtime.sendMessage({
@@ -167,7 +167,7 @@ export class PopupHandler {
                 target: { tabId: tabId },
                 func: function(type, message, popupId, targetUrl) {
                     // Función que se ejecuta en el contexto de la página
-                    console.log('SafeWaters: Mostrando popup específico - type:', type, 'message:', message, 'popupId:', popupId);
+                    // console.log('SafeWaters: Mostrando popup específico - type:', type, 'message:', message, 'popupId:', popupId); // DEBUG: Comentado para producción
                     
                     // Ocultar todos los popups primero
                     var allPopups = document.querySelectorAll('.safewaters-preview-popup');

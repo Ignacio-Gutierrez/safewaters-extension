@@ -27,9 +27,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Log para debugging
-    console.log('SafeWaters: Blocked page loaded', {
-        url: blockedUrl,
-        reason: blockedReason,
-        source: source
-    });
+    // console.log('SafeWaters: Blocked page loaded', { url: blockedUrl, reason: blockedReason, source: source }); // DEBUG: Comentado para producción
 });

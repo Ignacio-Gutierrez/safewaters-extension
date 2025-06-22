@@ -1,6 +1,6 @@
 // Content script simplificado que funciona sin imports problemáticos
 // Usa configuración centralizada del config.js
-console.log('SafeWaters: Content script loading...');
+// console.log('SafeWaters: Content script loading...'); // DEBUG: Comentado para producción
 
 class SafeWatersController {
   constructor() {
@@ -15,7 +15,7 @@ class SafeWatersController {
     
     this.setupListeners();
     this.setupMessageListeners();
-    console.log("SafeWaters: Extension initialized and active");
+    // console.log("SafeWaters: Extension initialized and active"); // DEBUG: Comentado para producción
   }
 
   async loadConfig() {
@@ -27,7 +27,7 @@ class SafeWatersController {
       
       if (response && response.success) {
         this.config = response.config;
-        console.log('SafeWaters: Configuración cargada desde background');
+        // console.log('SafeWaters: Configuración cargada desde background'); // DEBUG: Comentado para producción
       } else {
         // Fallback a configuración básica
         this.config = {
@@ -55,17 +55,17 @@ class SafeWatersController {
   }
 
   setupListeners() {
-    console.log("SafeWaters: Setting up click listeners");
+    // console.log("SafeWaters: Setting up click listeners"); // DEBUG: Comentado para producción
     const boundClickHandler = this.handleLinkClick.bind(this);
     document.body.addEventListener('click', boundClickHandler, true);
-    console.log("SafeWaters: Click listener added to document.body");
+    // console.log("SafeWaters: Click listener added to document.body"); // DEBUG: Comentado para producción
   }
 
   setupMessageListeners() {
     // Listener para mensajes del background script (navegación directa)
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.action === 'showDirectNavigationPopup') {
-        console.log('SafeWaters: Received direct navigation popup request:', message);
+        // console.log('SafeWaters: Received direct navigation popup request:', message); // DEBUG: Comentado para producción
         this.handleDirectNavigationPopup(message);
         sendResponse({ success: true });
       }
@@ -90,29 +90,29 @@ class SafeWatersController {
   }
 
   async handleLinkClick(event) {
-    console.log('SafeWaters: Click detected on:', event.target);
+    // console.log('SafeWaters: Click detected on:', event.target); // DEBUG: Comentado para producción
 
     // Ignorar clicks en elementos del popup de SafeWaters
     if (event.target.closest('.safewaters-preview-popup') || 
         event.target.hasAttribute('data-action') ||
         event.target.id.startsWith('sw-popup-')) {
-      console.log('SafeWaters: Click ignorado - es parte del popup de SafeWaters');
+      // console.log('SafeWaters: Click ignorado - es parte del popup de SafeWaters'); // DEBUG: Comentado para producción
       return;
     }
 
     const linkElement = event.target.closest('a[href^="http"], a[href^="https"]');
     
     if (!linkElement) {
-      console.log('SafeWaters: No link element found');
+      // console.log('SafeWaters: No link element found'); // DEBUG: Comentado para producción
       return;
     }
     
     if (linkElement.classList.contains('safewaters-ignore-click')) {
-      console.log('SafeWaters: Link ignored due to safewaters-ignore-click class');
+      // console.log('SafeWaters: Link ignored due to safewaters-ignore-click class'); // DEBUG: Comentado para producción
       return;
     }
 
-    console.log('SafeWaters: Link intercepted:', linkElement.href);
+    // console.log('SafeWaters: Link intercepted:', linkElement.href); // DEBUG: Comentado para producción
     event.preventDefault();
 
     const url = linkElement.href;
@@ -140,12 +140,12 @@ class SafeWatersController {
   }
 
   handleCheckResponse(result, url) {
-    console.log('SafeWaters: Respuesta de verificación recibida', { result, url });
+    // console.log('SafeWaters: Respuesta de verificación recibida', { result, url }); // DEBUG: Comentado para producción
     
     switch (result.action) {
       case 'allow':
         // URL segura - navegar inmediatamente
-        console.log('SafeWaters: URL allowed, navigating');
+        // console.log('SafeWaters: URL allowed, navigating'); // DEBUG: Comentado para producción
         window.location.href = url;
         break;
         

@@ -32,16 +32,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (proceedButton) {
         proceedButton.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('SafeWaters Warning: Proceed button clicked');
+            // console.log('SafeWaters Warning: Proceed button clicked'); // DEBUG: Comentado para producción
             
             const originalUrl = decodeURIComponent(warningUrl);
-            console.log('SafeWaters Warning: Attempting to approve navigation to:', originalUrl);
+            // console.log('SafeWaters Warning: Attempting to approve navigation to:', originalUrl); // DEBUG: Comentado para producción
             
             if (originalUrl && originalUrl !== 'URL no disponible') {
                 try {
                     // Validar que la URL es válida
                     const urlObj = new URL(originalUrl);
-                    console.log('SafeWaters Warning: URL validation successful for:', urlObj.href);
+                    // console.log('SafeWaters Warning: URL validation successful for:', urlObj.href); // DEBUG: Comentado para producción
                     
                     // Deshabilitar botón mientras se procesa
                     proceedButton.disabled = true;
@@ -53,13 +53,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         url: originalUrl
                     }, function(response) {
                         if (response && response.success) {
-                            console.log('SafeWaters Warning: Navigation approved successfully');
+                            // console.log('SafeWaters Warning: Navigation approved successfully'); // DEBUG: Comentado para producción
                             // La navegación ya se ejecutó desde el background script
                         } else {
                             console.error('SafeWaters Warning: Failed to approve navigation:', response);
                             
                             // Fallback: intentar navegación directa
-                            console.log('SafeWaters Warning: Attempting direct navigation as fallback');
+                            // console.log('SafeWaters Warning: Attempting direct navigation as fallback'); // DEBUG: Comentado para producción
                             window.location.href = originalUrl;
                             
                             // Re-habilitar botón

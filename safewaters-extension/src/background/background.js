@@ -113,7 +113,7 @@ class SafeWatersOrchestrator {
                 tabId: sender.tab.id
             });
             
-            Logger.info('Click procesado', { url: request.url, result });
+            Logger.debug('Click procesado', { url: request.url, result });
             sendResponse({ success: true, result });
             
         } catch (error) {
@@ -137,7 +137,7 @@ class SafeWatersOrchestrator {
             
             // Si el usuario eligió proceder, pre-aprobar la URL en el navigation interceptor
             if (request.userAction === 'proceed' && popupInfo && popupInfo.url) {
-                Logger.info('Usuario eligió proceder desde popup, pre-aprobando URL', { 
+                Logger.debug('Usuario eligió proceder desde popup, pre-aprobando URL', { 
                     url: popupInfo.url, 
                     tabId: sender.tab.id 
                 });
@@ -147,10 +147,10 @@ class SafeWatersOrchestrator {
                 
                 // Ahora navegar a la URL
                 await chrome.tabs.update(sender.tab.id, { url: popupInfo.url });
-                Logger.info('Navegación ejecutada después de aprobación de popup', { url: popupInfo.url });
+                Logger.debug('Navegación ejecutada después de aprobación de popup', { url: popupInfo.url });
             }
             
-            Logger.info('Respuesta de popup procesada', request);
+            Logger.debug('Respuesta de popup procesada', request);
             sendResponse({ success: true });
             
         } catch (error) {
@@ -171,7 +171,7 @@ class SafeWatersOrchestrator {
             const approved = this.interceptors.navigation.approveUserNavigation(url);
             
             if (approved) {
-                Logger.info('Navegación aprobada por usuario', { url, tabId: sender.tab.id });
+                Logger.debug('Navegación aprobada por usuario', { url, tabId: sender.tab.id });
                 
                 // Navegar directamente a la URL
                 await chrome.tabs.update(sender.tab.id, { url: url });

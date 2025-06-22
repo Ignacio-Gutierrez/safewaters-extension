@@ -4,7 +4,7 @@ function handleApiError(error, operation) {
     console.error(`Error en ${operation}:`, error);
     
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        console.log(`API no disponible para ${operation} - servidor posiblemente no está ejecutándose`);
+        // console.log(`API no disponible para ${operation} - servidor posiblemente no está ejecutándose`); // DEBUG: Comentado para producción
         return { error: 'API_UNAVAILABLE', message: 'Servidor no disponible' };
     }
     

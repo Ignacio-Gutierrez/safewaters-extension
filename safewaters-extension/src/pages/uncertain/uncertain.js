@@ -1,34 +1,13 @@
 // SafeWaters - Uncertain Page Script
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('SafeWaters Uncertain: Page loaded');
+    // console.log('SafeWaters Uncertain: Page loaded'); // DEBUG: Comentado para producción
     
     // Obtener parámetros de la URL
     const urlParams = new URLSearchParams(window.location.search);
     const uncertainUrl = urlParams.get('url') || 'URL no disponible';
     const uncertainReason = urlParams.get('reason') || 'Unable to verify site security';
     
-    console.log('SafeWaters Uncertain: URL params:', {
-        rawUrl: uncertainUrl,
-        decodedUrl: uncertainUrl !== 'URL no disponible' ? decodeURIComponent(uncertainUrl) : 'N/A',
-        reason: uncertainReason,
-        currentPageUrl: window.location.href,
-        allParams: Object.fromEntries(urlParams.entries())
-    });
-    
-    // Debugging extra
-    console.log('SafeWaters Uncertain: Raw URL value:', JSON.stringify(uncertainUrl));
-    console.log('SafeWaters Uncertain: Is URL available?', uncertainUrl !== 'URL no disponible' && uncertainUrl !== null);
-    
-    if (uncertainUrl && uncertainUrl !== 'URL no disponible') {
-        try {
-            const decoded = decodeURIComponent(uncertainUrl);
-            console.log('SafeWaters Uncertain: Successfully decoded URL:', decoded);
-            const testUrl = new URL(decoded);
-            console.log('SafeWaters Uncertain: URL validation test passed:', testUrl.href);
-        } catch (e) {
-            console.error('SafeWaters Uncertain: URL test failed:', e);
-        }
-    }
+    // DEBUG: Comentado para producción - logs de debugging
     
     // Mostrar información
     const urlElement = document.getElementById('uncertain-url');
@@ -57,16 +36,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (proceedButton) {
         proceedButton.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('SafeWaters Uncertain: Proceed button clicked');
+            // console.log('SafeWaters Uncertain: Proceed button clicked'); // DEBUG: Comentado para producción
             
             const originalUrl = decodeURIComponent(uncertainUrl);
-            console.log('SafeWaters Uncertain: Attempting to approve navigation to:', originalUrl);
+            // console.log('SafeWaters Uncertain: Attempting to approve navigation to:', originalUrl); // DEBUG: Comentado para producción
             
             if (originalUrl && originalUrl !== 'URL no disponible') {
                 try {
                     // Validar que la URL es válida
                     const urlObj = new URL(originalUrl);
-                    console.log('SafeWaters Uncertain: URL validation successful for:', urlObj.href);
+                    // console.log('SafeWaters Uncertain: URL validation successful for:', urlObj.href); // DEBUG: Comentado para producción
                     
                     // Deshabilitar botón mientras se procesa
                     proceedButton.disabled = true;
@@ -78,13 +57,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         url: originalUrl
                     }, function(response) {
                         if (response && response.success) {
-                            console.log('SafeWaters Uncertain: Navigation approved successfully');
+                            // console.log('SafeWaters Uncertain: Navigation approved successfully'); // DEBUG: Comentado para producción
                             // La navegación ya se ejecutó desde el background script
                         } else {
                             console.error('SafeWaters Uncertain: Failed to approve navigation:', response);
                             
                             // Fallback: intentar navegación directa
-                            console.log('SafeWaters Uncertain: Attempting direct navigation as fallback');
+                            // console.log('SafeWaters Uncertain: Attempting direct navigation as fallback'); // DEBUG: Comentado para producción
                             window.location.href = originalUrl;
                             
                             // Re-habilitar botón

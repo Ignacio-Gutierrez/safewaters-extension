@@ -69,7 +69,7 @@ export class NavigationInterceptor {
 
         // Verificar si el usuario ha confirmado la navegación a esta URL
         if (this.isUserApproved(url)) {
-            Logger.info('URL aprobada por usuario detectada, permitiendo navegación', { url });
+            Logger.debug('URL aprobada por usuario detectada, permitiendo navegación', { url });
             this.clearUserApproval(url); // Limpiar la aprobación después de usarla
             return;
         }
@@ -100,7 +100,7 @@ export class NavigationInterceptor {
             const securityResult = await this.checkUrlSecurity(url);
             const decision = this.makeNavigationDecision(securityResult, url);
 
-            Logger.info('Decisión de navegación tomada', { url, decision });
+            Logger.debug('Decisión de navegación tomada', { url, decision });
 
             if (decision.block || decision.showPage) {
                 // Bloquear navegación y mostrar página de seguridad
@@ -376,7 +376,7 @@ export class NavigationInterceptor {
                 this.userApprovedUrls.delete(normalizedUrl);
             }, 30000);
             
-            Logger.info('Navegación aprobada por usuario', { url, normalizedUrl });
+            Logger.debug('Navegación aprobada por usuario', { url, normalizedUrl });
             return true;
         } catch (error) {
             Logger.error('Error aprobando navegación de usuario', { url, error: error.message });

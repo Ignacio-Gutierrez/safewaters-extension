@@ -11,7 +11,7 @@ export const CONFIG = {
     // Configuración de logging
     logging: {
         enabled: true,
-        level: 'info' // 'debug', 'info', 'warn', 'error'
+        level: 'warn' // Solo warnings y errors en producción (era 'info' para desarrollo)
     },
     
     // URLs que deben ignorarse

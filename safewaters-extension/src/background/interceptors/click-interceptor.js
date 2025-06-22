@@ -147,7 +147,7 @@ export class ClickInterceptor {
                 tabId: tabId
             });
 
-            Logger.info('Popup mostrado', { popupId, type: decision.type, url });
+            Logger.debug('Popup mostrado', { popupId, type: decision.type, url });
             return popupId;
 
         } catch (error) {
@@ -159,7 +159,7 @@ export class ClickInterceptor {
     async handlePopupResponse(options) {
         const { popupId, action, url, tabId } = options;
         
-        Logger.info('Procesando respuesta de popup', { popupId, action, url });
+        Logger.debug('Procesando respuesta de popup', { popupId, action, url });
 
         // Delegar al popup handler
         const popupInfo = this.popupHandler.handlePopupResponse(popupId, action);
@@ -172,17 +172,17 @@ export class ClickInterceptor {
         // Procesar acción del usuario
         switch (action) {
             case 'proceed':
-                Logger.info('Usuario eligió proceder', { url: popupInfo.url });
+                Logger.debug('Usuario eligió proceder', { url: popupInfo.url });
                 // La navegación se maneja desde el background script
                 break;
                 
             case 'cancel':
-                Logger.info('Usuario canceló navegación', { url: popupInfo.url });
+                Logger.debug('Usuario canceló navegación', { url: popupInfo.url });
                 // No hacer nada, mantener en la página actual
                 break;
                 
             case 'understood':
-                Logger.info('Usuario entendió el bloqueo', { url: popupInfo.url });
+                Logger.debug('Usuario entendió el bloqueo', { url: popupInfo.url });
                 // No hacer nada para URLs bloqueadas
                 break;
                 

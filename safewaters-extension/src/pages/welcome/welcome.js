@@ -20,13 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Log para debugging
-    console.log('SafeWaters Welcome: Loaded with params', { 
-        source, 
-        returnUrl, 
-        stepParam, 
-        updateToken, 
-        currentStep 
-    });
+    // console.log('SafeWaters Welcome: Loaded with params', { source, returnUrl, stepParam, updateToken, currentStep }); // DEBUG: Comentado para producción
     
     // Elementos del DOM
     const tokenInput = document.getElementById('profileToken');
@@ -68,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Si viene del popup para actualizar token, mostrar mensaje apropiado
     if (source === 'popup' && updateToken === 'true') {
-        console.log('SafeWaters Welcome: Modo actualización de token activado');
+        // console.log('SafeWaters Welcome: Modo actualización de token activado'); // DEBUG: Comentado para producción
         showStatus('Ingresa tu nuevo token. El anterior se mantendrá hasta confirmar que el nuevo es válido.', 'info');
     }
 
@@ -94,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await chrome.storage.local.set({
                     profileToken: token
                 });
-                console.log('SafeWaters: Nuevo token validado y guardado, reemplazando el anterior');
+                // console.log('SafeWaters: Nuevo token validado y guardado, reemplazando el anterior'); // DEBUG: Comentado para producción
 
                 // Determinar mensaje según el contexto
                 const successMessage = (source === 'popup' && updateToken === 'true') 
@@ -140,12 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function checkExistingConfiguration() {
         try {
             const result = await chrome.storage.local.get(['profileToken']);
-            console.log('SafeWaters: Checking existing token');
+            // console.log('SafeWaters: Checking existing token'); // DEBUG: Comentado para producción
             
             if (result.profileToken) {
                 // Si está actualizando token, mostrar información pero no saltar al paso 3
                 if (source === 'popup' && updateToken === 'true') {
-                    console.log('SafeWaters: Opening for token update, current token exists');
+                    // console.log('SafeWaters: Opening for token update, current token exists'); // DEBUG: Comentado para producción
                     profileInfo.textContent = `Token actual configurado (será reemplazado al validar uno nuevo)`;
                     showStatus('Tienes un token configurado. Ingresa el nuevo token para actualizarlo.', 'info');
                     // Mantener en step 1 para permitir ingresar nuevo token
@@ -156,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     goToStep(3);
                 }
             } else {
-                console.log('SafeWaters: No existing token found');
+                // console.log('SafeWaters: No existing token found'); // DEBUG: Comentado para producción
                 showStatus('Configura tu token para comenzar a usar SafeWaters.', 'info');
             }
         } catch (error) {
@@ -231,15 +225,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const savedConfig = await chrome.storage.local.get(['profileToken']);
             
             if (savedConfig.profileToken) {
-                showStatus('✅ Token guardado permanentemente en Chrome. ¡SafeWaters está listo!', 'success');
-                console.log('SafeWaters: Token verified and saved permanently');
+                showStatus('Token guardado permanentemente en Chrome. ¡SafeWaters está listo!', 'success');
+                // console.log('SafeWaters: Token verified and saved permanently'); // DEBUG: Comentado para producción
                 
                 // Si viene de navegación y hay URL de retorno, redirigir
                 if (source === 'navigation' && returnUrl) {
                     const originalUrl = decodeURIComponent(returnUrl);
-                    console.log('SafeWaters: Redirecting to original URL after configuration:', originalUrl);
+                    // console.log('SafeWaters: Redirecting to original URL after configuration:', originalUrl); // DEBUG: Comentado para producción
                     
-                    showStatus('✅ Configuración completa. Redirigiendo al sitio solicitado...', 'success');
+                    showStatus('Configuración completa. Redirigiendo al sitio solicitado...', 'success');
                     
                     setTimeout(() => {
                         window.location.href = originalUrl;
@@ -253,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 300);
                 
             } else {
-                showStatus('⚠️ Error: El token no se guardó correctamente. Por favor, intenta nuevamente.', 'error');
+                showStatus('Error: El token no se guardó correctamente. Por favor, intenta nuevamente.', 'error');
                 return;
             }
         } catch (error) {
