@@ -1,0 +1,385 @@
+/* Reset y fuentes */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+@font-face {
+    font-family: 'PirataOne';
+    src: url('../../../public/fonts/PirataOne-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: #056676;
+    min-height: 100vh;
+    color: #000000;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 40px;
+    padding: 20px 0;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.logo-img {
+    width: 60px;
+    height: 60px;
+}
+
+.pirata-one {
+    font-family: 'PirataOne', sans-serif;
+    font-size: 3.5em;
+    color: #E8DED2;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.25);
+}
+
+.subtitle {
+    font-size: 1.2em;
+    opacity: 0.9;
+    margin-top: 10px;
+}
+
+/* Main content */
+main {
+    flex: 1;
+    background: #E8DED2;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    border: 3px solid #8B4513;
+}
+
+/* Progress bar */
+.progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.progress-step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #b6b4b4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000000;
+    transition: all 0.3s ease;
+}
+
+.progress-step.active {
+    background: #056676;
+    color: white;
+}
+
+.progress-step.completed {
+    background: #28a745;
+    color: white;
+}
+
+.progress-line {
+    width: 100px;
+    height: 3px;
+    background: #b6b4b4;
+    margin: 0 10px;
+    transition: all 0.3s ease;
+}
+
+.progress-line.completed {
+    background: #28a745;
+}
+
+/* Steps */
+.step {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.step.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-content h2 {
+    color: #056676;
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 1.8em;
+}
+
+/* Instruction cards */
+.instruction-cards {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #056676;
+    border-right: 4px solid #056676;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.card-number {
+    width: 30px;
+    height: 30px;
+    background: #056676;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.card-content h3 {
+    color: #056676;
+    margin-bottom: 8px;
+}
+
+.card-content p {
+    color: #000000;
+    font-size: 0.95em;
+}
+
+/* Form styles */
+.token-form {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.token-form label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #056676;
+}
+
+.token-form input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 20px;
+    transition: border-color 0.3s ease;
+}
+
+.token-form input:focus {
+    outline: none;
+    border-color: #056676;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* Buttons */
+.btn-primary, .btn-secondary {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.btn-primary {
+    background: #056676;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #044a57;
+    transform: translateY(-2px);
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* Status messages */
+.status {
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.status.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status.loading {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.status.info {
+    background: #d1f2eb;
+    color: #0c5460;
+    border: 1px solid #a2d9ce;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Success message */
+.success-message {
+    text-align: center;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.success-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+}
+
+.success-message h3 {
+    color: #28a745;
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+
+.success-message p {
+    color: #666;
+    font-size: 1.1em;
+    margin-bottom: 30px;
+}
+
+
+/* API Status */
+.api-status {
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 20px;
+    border: 1px solid;
+}
+
+.api-status.available {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.api-status.unavailable {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+/* Persistence info */
+.persistence-info {
+    background: #e8f5e8;
+    border: 1px solid #4caf50;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.persistence-info p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.persistence-info strong {
+    color: #2e7d32;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    main {
+        padding: 20px;
+    }
+    
+    .pirata-one {
+        font-size: 2em;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .progress-line {
+        width: 50px;
+    }
+}

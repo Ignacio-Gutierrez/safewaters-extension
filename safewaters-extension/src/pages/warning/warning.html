@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeWaters - Sitio Peligroso</title>
+    <link rel="stylesheet" href="warning.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span class="title">SafeWaters</span>
+        </div>
+        <div class="status-icon">
+            <img src="/icons/logo-rojo.svg" alt="Warning" class="warning-icon">
+        </div>
+        <h1>¡Peligro Detectado!</h1>
+        <p class="message">Este sitio web ha sido identificado como potencialmente peligroso o malicioso.</p>
+        <div class="details">
+            <div class="detail-item">
+                <strong>Sitio web:</strong> 
+                <span id="warning-url" class="url-info">URL no disponible</span>
+            </div>
+            <div class="detail-item">
+                <strong>Motivo:</strong> 
+                <span id="warning-reason" class="reason-info">Información no disponible</span>
+            </div>
+            <div class="recommendation">
+                <strong>Recomendación:</strong> No ingreses información personal ni descargues archivos de este sitio.
+            </div>
+            <div class="action-buttons">
+                <button id="proceed-button" class="proceed-button">Continuar bajo mi riesgo</button>
+                <button id="go-back-button" class="cancel-button">Cerrar ventana</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="warning.js"></script>
+</body>
+</html>
